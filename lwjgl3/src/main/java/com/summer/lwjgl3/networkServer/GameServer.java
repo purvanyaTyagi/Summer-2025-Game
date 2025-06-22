@@ -16,12 +16,13 @@ public class GameServer implements Runnable{
     private DatagramSocket socket;
     ConcurrentHashMap<InetSocketAddress, ClientState> clients = new ConcurrentHashMap<>();
     private ExecutorService pool = Executors.newFixedThreadPool(4); // Or cached/thread-safe pool
+    public volatile boolean running = true;
     public void run(){
         try {
             socket = new DatagramSocket(9999);
             new Thread(this::broadcastLoop).start();
 
-            while(true){
+            while(running){
                 byte[] buffer = new byte[512];
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
 
@@ -34,7 +35,6 @@ public class GameServer implements Runnable{
                 int sender_port = packet.getPort();
                 
                 pool.submit(() -> handlePacket(senderAddress, sender_port, datacopy));
-            
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -51,7 +51,7 @@ public class GameServer implements Runnable{
     }
 
     private void broadcastLoop(){
-        while(true){
+        while(running){
             try{
                 for(Map.Entry<InetSocketAddress, ClientState> entry : clients.entrySet()){
                     InetSocketAddress addr = entry.getKey();
@@ -69,9 +69,9 @@ public class GameServer implements Runnable{
                             );
                             socket.send(packet);
                         }
-                }
-                Thread.sleep(1);
-        }
+                }     
+            }
+        Thread.sleep(1);
         }catch(Exception e){
             e.printStackTrace();
         }
@@ -91,6 +91,7 @@ public class GameServer implements Runnable{
     }
 
     public void stop() {
+        running = false;
         pool.shutdown();
         try {
             if (!pool.awaitTermination(3, TimeUnit.SECONDS)) {

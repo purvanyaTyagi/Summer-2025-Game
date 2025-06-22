@@ -9,15 +9,19 @@ import com.summer.lwjgl3.networkServer.*;
 public class Lwjgl3Launcher {
     static GameServer server;
     public static void main(String[] args) {
-
-        Thread server = new Thread(new GameServer());
+        GameServer game_server = new GameServer();
+        Thread server = new Thread(game_server);
         server.start();
-
-
 
         if (StartupHelper.startNewJvmIfRequired()) return; // This handles macOS support and helps on Windows.
         createApplication();
-    }
+        try {
+            game_server.stop();
+            server.join(); // wait for server to finish
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }   
 
     private static Lwjgl3Application createApplication() {
         return new Lwjgl3Application(new Main("127.0.0.1", 9999), getDefaultConfiguration());
