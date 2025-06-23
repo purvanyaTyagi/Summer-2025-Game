@@ -98,7 +98,7 @@ public class Lwjgl3Launcher {
     }
 
     private static Lwjgl3Application createApplication() {
-        return new Lwjgl3Application(new Main("127.0.0.1", 9999), getDefaultConfiguration());
+        return new Lwjgl3Application(new Main("127.0.0.1", 9999), getDefaultConfiguration()); //server address goes here. If using -withServer keep this as local host.
     }
 
     private static Lwjgl3ApplicationConfiguration getDefaultConfiguration() {

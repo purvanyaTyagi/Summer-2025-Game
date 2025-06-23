@@ -27,11 +27,16 @@ public class PhysicsHandler{
     final float upper_bound_y = 4850f;
     final float lower_bound_x = -730f;
     final float upper_bound_x = 730f;
-    final float x_control_speed = 10f;
+    final float x_control_speed = 60f;
     public boolean isOnPlatform = false;
 
-    float width = 40f;  // match sprite size
-    float height = 40f;
+    public boolean isWalking = false;
+    public boolean FacingRight = true;
+    public boolean FacingLeft = false;
+
+
+    float width = 20f;  // match sprite size
+    float height = 47f;
 
     public List<platform> platforms = new ArrayList<>();
 
@@ -139,17 +144,26 @@ public class PhysicsHandler{
         // === Player state ===
     float halfWidth = width / 2f;
     float halfHeight = height / 2f;
+    isWalking = false;
 
     // === Handle input ===
     if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE)  && isOnPlatform) {
         velocity_y += jump_pow;
+        isWalking = true;
     }
     if (Gdx.input.isKeyPressed(Input.Keys.A) && isOnPlatform) {
         velocity_x -= x_control_speed;
+        isWalking = true;
+        FacingLeft = true;
+        FacingRight = false;
     }
     if (Gdx.input.isKeyPressed(Input.Keys.D) && isOnPlatform) {
         velocity_x += x_control_speed;
+        isWalking = true;
+        FacingLeft = false;
+        FacingRight = true;
     }
+    
 
     // === Apply physics ===
     velocity_y += mass * grav * deltaTime;

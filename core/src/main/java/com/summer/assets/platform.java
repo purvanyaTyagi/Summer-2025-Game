@@ -1,7 +1,10 @@
 package com.summer.assets;
 
-public class platform {
+import com.badlogic.gdx.graphics.Texture;
+
+public class platform { //x,y represent the bottom-left point of the rectangle/
     public float x, y, width, height;
+    public Texture texture;
 
     public platform(float x, float y, float width, float height) {
         this.x = x;
