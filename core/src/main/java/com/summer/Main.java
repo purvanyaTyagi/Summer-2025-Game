@@ -14,6 +14,8 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 
+import com.summer.assets.*;
+
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
 
 public class Main extends ApplicationAdapter {
@@ -66,11 +68,16 @@ public class Main extends ApplicationAdapter {
 
         for (ClientState state : network_handler.other_clients.values()) {
             shapeRenderer.setColor(0, 1, 0, 1);
-            shapeRenderer.circle(state.x, state.y, 15); // Slightly smaller than player
+            shapeRenderer.circle(state.x, state.y, 20);
         }
 
         shapeRenderer.setColor(1, 0, 0, 1);
         shapeRenderer.circle(state.x, state.y, 20);
+
+        for (platform p : phy_handler.platforms) {
+            shapeRenderer.setColor(1, 1, 1, 1);
+            shapeRenderer.rect(p.x, p.y, p.width, p.height);
+        }
         shapeRenderer.end();
     }
 }
