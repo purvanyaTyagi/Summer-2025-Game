@@ -8,7 +8,67 @@ import com.summer.lwjgl3.networkServer.*;
 /** Launches the desktop (LWJGL3) application. */
 public class Lwjgl3Launcher {
     static GameServer server;
+    private static boolean withServer = false;
+    private static boolean clientOnly = false;
+    private static boolean serverOnly = false;
+
     public static void main(String[] args) {
+        for (String arg : args) {
+            switch (arg) {
+                case "-withserver":
+                    withServer = true;
+                    break;
+                case "-clientonly":
+                    clientOnly = true;
+                    break;
+                case "-serveronly":
+                    serverOnly = true;
+                    break;
+                default:
+                    System.err.println("Unknown option: " + arg);
+                    printUsage();
+                    System.exit(1);
+            }
+        }
+        int optionCount = (withServer ? 1 : 0) + (clientOnly ? 1 : 0) + (serverOnly ? 1 : 0);
+        if (optionCount != 1) {
+            System.err.println("Error: You must specify exactly one mode");
+            printUsage();
+            System.exit(1);
+        }
+
+        if (withServer) {
+            runWithServer();
+        } else if (clientOnly) {
+            runClientOnly();
+        } else if (serverOnly) {
+            runServerOnly();
+        }
+
+        // GameServer game_server = new GameServer();
+        // Thread server = new Thread(game_server);
+        // server.start();
+
+        // if (StartupHelper.startNewJvmIfRequired()) return; // This handles macOS support and helps on Windows.
+        // createApplication();
+        // try {
+        //     game_server.stop();
+        //     server.join(); // wait for server to finish
+        // } catch (Exception e) {
+        //     e.printStackTrace();
+        // }
+    }
+    
+    private static void printUsage() {
+        System.out.println("Usage: java Main <mode>");
+        System.out.println("Modes (select one):");
+        System.out.println("  -withserver   Run both client and server");
+        System.out.println("  -clientonly   Run only the client");
+        System.out.println("  -serveronly   Run only the server");
+    }
+
+    private static void runWithServer() {
+        System.out.println("Running in combined client+server mode");
         GameServer game_server = new GameServer();
         Thread server = new Thread(game_server);
         server.start();
@@ -21,7 +81,21 @@ public class Lwjgl3Launcher {
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }   
+
+    }
+
+    private static void runClientOnly() {
+        System.out.println("Running in client-only mode");
+        if (StartupHelper.startNewJvmIfRequired()) return; // This handles macOS support and helps on Windows.
+        createApplication();
+    }
+
+    private static void runServerOnly() {
+        System.out.println("Running in server-only mode");
+        GameServer server = new GameServer();
+        server.run();
+        server.stop();
+    }
 
     private static Lwjgl3Application createApplication() {
         return new Lwjgl3Application(new Main("127.0.0.1", 9999), getDefaultConfiguration());

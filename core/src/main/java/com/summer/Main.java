@@ -68,11 +68,11 @@ public class Main extends ApplicationAdapter {
 
         for (ClientState state : network_handler.other_clients.values()) {
             shapeRenderer.setColor(0, 1, 0, 1);
-            shapeRenderer.circle(state.x, state.y, 20);
+            shapeRenderer.rect(state.x - phy_handler.width / 2f, state.y - phy_handler.height / 2f, phy_handler.width, phy_handler.height);
         }
 
         shapeRenderer.setColor(1, 0, 0, 1);
-        shapeRenderer.circle(state.x, state.y, 20);
+        shapeRenderer.rect(state.x - phy_handler.width / 2f, state.y - phy_handler.height / 2f, phy_handler.width, phy_handler.height);
 
         for (platform p : phy_handler.platforms) {
             shapeRenderer.setColor(1, 1, 1, 1);

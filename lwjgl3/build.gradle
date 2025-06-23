@@ -43,8 +43,13 @@ def os = System.properties['os.name'].toLowerCase()
 
 run {
   workingDir = rootProject.file('assets').path
+  args = ['-withserver'] //default
 // You can uncomment the next line if your IDE claims a build failure even when the app closed properly.
   //setIgnoreExitValue(true)
+  if (project.hasProperty('mode')) {
+        args = [project.getProperty('mode')]
+  }
+
 
   if (os.contains('mac')) jvmArgs += "-XstartOnFirstThread"
 }
