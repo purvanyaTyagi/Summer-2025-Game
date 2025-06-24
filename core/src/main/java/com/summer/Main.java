@@ -37,8 +37,8 @@ public class Main extends ApplicationAdapter {
     public void create() {
         shapeRenderer = new ShapeRenderer();
         camera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-        state = new ClientState(0f, 0f);
-        phy_handler = new PhysicsHandler(state.x, state.y, -500f, 1000f);
+        state = new ClientState(0f, 0f, true, false, false);
+        phy_handler = new PhysicsHandler(state.x, state.y, -500f, 700f);
         batch = new SpriteBatch();
         idle_Animator = new Animator();
         walk_Animator = new AnimatorWalk();
@@ -67,7 +67,7 @@ public class Main extends ApplicationAdapter {
     }
 
     public void update_screen(){
-        network_handler.sendPosition(state.x, state.y);
+        network_handler.sendPosition(state);
         // Clear screen
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
@@ -75,6 +75,7 @@ public class Main extends ApplicationAdapter {
         shapeRenderer.setProjectionMatrix(camera.combined);
         batch.setProjectionMatrix(camera.combined);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        batch.begin();
 
         // shapeRenderer.setColor(1, 0, 0, 1);
         // shapeRenderer.rect(state.x - phy_handler.width / 2f, state.y - phy_handler.height / 2f, phy_handler.width, phy_handler.height);
@@ -88,22 +89,22 @@ public class Main extends ApplicationAdapter {
         //     batch.end();
         // }
         if(phy_handler.isWalking && phy_handler.FacingLeft){
-            batch.begin();
+
             walk_Animator.render_left(batch, state.x, state.y);
-            batch.end();
+
         }else if(phy_handler.isWalking && phy_handler.FacingRight){
-            batch.begin();
+
             walk_Animator.render_right(batch, state.x, state.y);
-            batch.end();
+
         }
         else if(phy_handler.FacingLeft){
-            batch.begin();
+
             idle_Animator.render_left(batch, state.x, state.y);
-            batch.end();
+
         }else{
-            batch.begin();
+
             idle_Animator.render_right(batch, state.x, state.y);
-            batch.end();
+
         }
 
         // if(walk_Animator.WalkAnimation.getKeyFrame(walk_Animator.stateTime, true).isFlipX() != !phy_handler.FacingRight){
@@ -113,17 +114,25 @@ public class Main extends ApplicationAdapter {
 
 
         for (ClientState state : network_handler.other_clients.values()) {
-            shapeRenderer.setColor(0, 1, 0, 1);
-            shapeRenderer.rect(state.x - phy_handler.width / 2f, state.y - phy_handler.height / 2f, phy_handler.width, phy_handler.height);
+            // shapeRenderer.setColor(0, 1, 0, 1);
+            // shapeRenderer.rect(state.x - phy_handler.width / 2f, state.y - phy_handler.height / 2f, phy_handler.width, phy_handler.height);
+            if(state.isWalking && state.FacingLeft){
+                walk_Animator.render_left(batch, state.x, state.y);
+            }else if(state.isWalking && state.FacingRight){
+                walk_Animator.render_right(batch, state.x, state.y);
+            }else if(state.FacingLeft){
+                idle_Animator.render_left(batch, state.x, state.y);   
+            }else{
+                idle_Animator.render_right(batch, state.x, state.y);
+            }
         }
-
-
-    
 
         for (platform p : phy_handler.platforms) {
             shapeRenderer.setColor(1, 1, 1, 1);
             shapeRenderer.rect(p.x, p.y, p.width, p.height);
+            // batch.draw(p.tileRegion, p.x - p.width/2, p.y - p.height/2, p.width, p.height);
         }
+        batch.end();
         shapeRenderer.end();
     }
 }

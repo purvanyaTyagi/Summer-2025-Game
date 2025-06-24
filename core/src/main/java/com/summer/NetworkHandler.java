@@ -1,6 +1,6 @@
 package com.summer;
 
 public interface NetworkHandler {
-    void sendPosition(float x, float y);
+    void sendPosition(ClientState state);
     void receiveLoop();
 }

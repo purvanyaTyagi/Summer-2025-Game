@@ -1,10 +1,24 @@
 package com.summer;
-import com.badlogic.gdx.graphics.Color;
+import java.io.Serializable;
 
-public class ClientState {
+import com.badlogic.gdx.graphics.Color;
+import java.net.*;
+
+public class ClientState implements Serializable{
+    private static final long serialVersionUID = 1L;
+
     public float x, y;
-    public ClientState(float x, float y){
+    public boolean FacingLeft;
+    public boolean FacingRight;
+    public boolean isOnPlatform;
+    public boolean isWalking;
+    public InetSocketAddress sock_address = new InetSocketAddress("127.0.0.1", 9999); //this is the address of the machine that the server receives the packet from. //will get overriden
+    public ClientState(float x, float y, boolean FacingRight, boolean isOnPlatform, boolean isWalking){
         this.x = x;
         this.y = y;
+        this.FacingRight = FacingRight;
+        this.FacingLeft = !FacingRight;
+        this.isOnPlatform = isOnPlatform;
+        this.isWalking = isWalking;
     }
 }

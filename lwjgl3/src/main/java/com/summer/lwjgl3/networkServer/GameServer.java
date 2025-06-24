@@ -2,6 +2,7 @@ package com.summer.lwjgl3.networkServer;
 
 
 import java.net.*;
+import java.io.*;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.util.*;
@@ -43,11 +44,22 @@ public class GameServer implements Runnable{
     public void handlePacket(InetAddress clientIP, int clientPort, byte[] data){
         InetSocketAddress client_addr = new InetSocketAddress(clientIP, clientPort);
 
-        ByteBuffer bb = ByteBuffer.wrap(data);
-        float x = bb.getFloat();
-        float y = bb.getFloat();
-        clients.put(client_addr, new ClientState(x, y));
-        System.out.println("Received Packet from port No: " + clientPort);
+        try {
+            ByteArrayInputStream bais = new ByteArrayInputStream(data);
+            ObjectInputStream ois = new ObjectInputStream(bais);
+
+            ClientState client_state = (ClientState) ois.readObject();
+            client_state.sock_address = client_addr;
+            clients.put(client_addr, client_state);
+            System.out.println("Received Packet from port No: " + clientPort);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        // ByteBuffer bb = ByteBuffer.wrap(data);
+        // float x = bb.getFloat();
+        // float y = bb.getFloat();
+        // clients.put(client_addr, new ClientState(x, y));
     }
 
     private void broadcastLoop(){
@@ -56,10 +68,14 @@ public class GameServer implements Runnable{
                 for(Map.Entry<InetSocketAddress, ClientState> entry : clients.entrySet()){
                     InetSocketAddress addr = entry.getKey();
                     ClientState state = entry.getValue();
-                    float x = state.x;
-                    float y = state.y;
+                    // float x = state.x;
+                    // float y = state.y;
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    ObjectOutputStream oos = new ObjectOutputStream(baos);
+                    oos.writeObject(state);
+                    oos.flush();
 
-                    byte[] message = encodeMessage(x, y, addr);
+                    byte[] message = baos.toByteArray();
 
                     for (InetSocketAddress target : clients.keySet()) {
                         if (!target.equals(addr)) {
@@ -78,17 +94,17 @@ public class GameServer implements Runnable{
         }
     }
 
-    public byte[] encodeMessage(float x, float y, InetSocketAddress addr) throws Exception {
-        byte[] ipStr = addr.toString().getBytes("UTF-8");
-        ByteBuffer buffer = ByteBuffer.allocate(4 + 4 + ipStr.length + 4); // 2 floats + IP string + string length
+    // public byte[] encodeMessage(float x, float y, InetSocketAddress addr) throws Exception {
+    //     byte[] ipStr = addr.toString().getBytes("UTF-8");
+    //     ByteBuffer buffer = ByteBuffer.allocate(4 + 4 + ipStr.length + 4); // 2 floats + IP string + string length
     
-        buffer.putFloat(x);
-        buffer.putFloat(y);
-        buffer.putInt(ipStr.length);
-        buffer.put(ipStr);
+    //     buffer.putFloat(x);
+    //     buffer.putFloat(y);
+    //     buffer.putInt(ipStr.length);
+    //     buffer.put(ipStr);
     
-        return buffer.array();
-    }
+    //     return buffer.array();
+    // }
 
     public void stop() {
         running = false;

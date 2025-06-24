@@ -7,7 +7,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.summer.assets.*;
 
-public class PhysicsHandler{
+public class PhysicsHandler{ //x,y represent the middle point of the generated player rectangle.
     public float x;
     public float y;
     public float grav;
@@ -226,6 +226,6 @@ public class PhysicsHandler{
         velocity_x *= 0.9f; // friction
     }
 
-    return new ClientState(x, y);
+    return new ClientState(x, y, FacingRight, isOnPlatform, isWalking);
     }
 }
