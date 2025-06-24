@@ -91,7 +91,7 @@ public class Main extends ApplicationAdapter {
         // if (Gdx.input.isKeyPressed(Input.Keys.D)) x += speed * dt;
         state = phy_handler.update_position(dt);
 
-        for(String color : availableColors){
+        for(String color : allColors){
             idle_Animator.get(color).update(dt);
             walk_Animator.get(color).update(dt);
             roll_Animator.get(color).update(dt);
@@ -102,7 +102,7 @@ public class Main extends ApplicationAdapter {
     @Override
     public void dispose() {
         shapeRenderer.dispose();
-        for(String color : availableColors){
+        for(String color : allColors){
             idle_Animator.get(color).dispose();
             walk_Animator.get(color).dispose();
             roll_Animator.get(color).dispose();
