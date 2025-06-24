@@ -38,33 +38,43 @@ public class Main extends ApplicationAdapter {
 
     public Main(String host, int port){
         network_handler = new DesktopNetworkHandler(host, port);
-        try {
-            Thread.sleep(50);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        if(network_handler.other_clients.size() >= 2){
-            throw new RuntimeException("Maximum Client Size reached");
-        }
-        for(Map.Entry<InetSocketAddress, ClientState> entry : network_handler.other_clients.entrySet()){
-            usedColors.add(entry.getValue().color);
-        }
-        if (usedColors != null) {
-            availableColors.removeAll(usedColors);
-            System.out.println("not null");
-        }
-        Random rand = new Random();
-        chosenColor = availableColors.get(rand.nextInt(availableColors.size()));
     }
 
     @Override
     public void create() {
+        state = new ClientState(0f, 0f, true, false, false, false, "g");
+        network_handler.sendPosition(state);
+
+        try {
+            Thread.sleep(200);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        if(network_handler.other_clients.size() >= 2){
+            throw new RuntimeException("Maximum Client Size reached");
+        }
+        System.out.println(network_handler.other_clients.size());
+
+
+        for(Map.Entry<InetSocketAddress, ClientState> entry : network_handler.other_clients.entrySet()){
+            System.out.println(entry.getValue().color);
+            usedColors.add(entry.getValue().color);
+        }
+        if (usedColors != null) {
+            availableColors.removeAll(usedColors);  
+            System.out.println(usedColors.size());
+        }
+        Random rand = new Random();
+        chosenColor = availableColors.get(rand.nextInt(availableColors.size()));
+
+
         shapeRenderer = new ShapeRenderer();
         camera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-        state = new ClientState(0f, 0f, true, false, false, false, chosenColor);
         phy_handler = new PhysicsHandler(state.x, state.y, -500f, 700f, chosenColor);
         batch = new SpriteBatch();
-        for(String color : availableColors){
+
+        for(String color : allColors){
             idle_Animator.put(color, new Animator(color));
             walk_Animator.put(color, new AnimatorWalk(color));
             roll_Animator.put(color, new AnimatorRoll(color));
