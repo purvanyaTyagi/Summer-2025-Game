@@ -12,13 +12,17 @@ public class ClientState implements Serializable{
     public boolean FacingRight;
     public boolean isOnPlatform;
     public boolean isWalking;
+    public boolean rolling;
+    public String color;
     public InetSocketAddress sock_address = new InetSocketAddress("127.0.0.1", 9999); //this is the address of the machine that the server receives the packet from. //will get overriden
-    public ClientState(float x, float y, boolean FacingRight, boolean isOnPlatform, boolean isWalking){
+    public ClientState(float x, float y, boolean FacingRight, boolean isOnPlatform, boolean isWalking, boolean rolling, String color){
         this.x = x;
         this.y = y;
         this.FacingRight = FacingRight;
         this.FacingLeft = !FacingRight;
         this.isOnPlatform = isOnPlatform;
         this.isWalking = isWalking;
+        this.rolling = rolling;
+        this.color = color;
     }
 }

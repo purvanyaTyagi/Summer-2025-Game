@@ -1,6 +1,7 @@
 package com.summer;
 
 import java.net.InetSocketAddress;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.badlogic.gdx.ApplicationAdapter;
@@ -20,50 +21,82 @@ import com.summer.assets.*;
 
 public class Main extends ApplicationAdapter {
 
+    public float stateTimeForRoll = 0f;
+    public String chosenColor;
+    public List<String> allColors = Arrays.asList("g", "b");
+    public List<String> usedColors = new ArrayList<>();
+    public List<String> availableColors = new ArrayList<>(allColors);
     ShapeRenderer shapeRenderer;
     DesktopNetworkHandler network_handler;
     ClientState state;
     OrthographicCamera camera;
     PhysicsHandler phy_handler;
     SpriteBatch batch;
-    Animator idle_Animator;
-    AnimatorWalk walk_Animator;
+    HashMap<String, Animator> idle_Animator = new HashMap<>();    ;
+    HashMap<String, AnimatorWalk> walk_Animator = new HashMap<>();    ;
+    HashMap<String, AnimatorRoll> roll_Animator = new HashMap<>();
 
     public Main(String host, int port){
         network_handler = new DesktopNetworkHandler(host, port);
+        try {
+            Thread.sleep(50);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        if(network_handler.other_clients.size() >= 2){
+            throw new RuntimeException("Maximum Client Size reached");
+        }
+        for(Map.Entry<InetSocketAddress, ClientState> entry : network_handler.other_clients.entrySet()){
+            usedColors.add(entry.getValue().color);
+        }
+        if (usedColors != null) {
+            availableColors.removeAll(usedColors);
+            System.out.println("not null");
+        }
+        Random rand = new Random();
+        chosenColor = availableColors.get(rand.nextInt(availableColors.size()));
     }
 
     @Override
     public void create() {
         shapeRenderer = new ShapeRenderer();
         camera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-        state = new ClientState(0f, 0f, true, false, false);
-        phy_handler = new PhysicsHandler(state.x, state.y, -500f, 700f);
+        state = new ClientState(0f, 0f, true, false, false, false, chosenColor);
+        phy_handler = new PhysicsHandler(state.x, state.y, -500f, 700f, chosenColor);
         batch = new SpriteBatch();
-        idle_Animator = new Animator();
-        walk_Animator = new AnimatorWalk();
+        for(String color : availableColors){
+            idle_Animator.put(color, new Animator(color));
+            walk_Animator.put(color, new AnimatorWalk(color));
+            roll_Animator.put(color, new AnimatorRoll(color));
+        }
     }
 
     @Override
     public void render() {
         float dt = Gdx.graphics.getDeltaTime();
-
         // Handle input
         // if (Gdx.input.isKeyPressed(Input.Keys.W)) y += speed * dt;
         // if (Gdx.input.isKeyPressed(Input.Keys.S)) y -= speed * dt;
         // if (Gdx.input.isKeyPressed(Input.Keys.A)) x -= speed * dt;
         // if (Gdx.input.isKeyPressed(Input.Keys.D)) x += speed * dt;
         state = phy_handler.update_position(dt);
-        idle_Animator.update(dt);
-        walk_Animator.update(dt);
+
+        for(String color : availableColors){
+            idle_Animator.get(color).update(dt);
+            walk_Animator.get(color).update(dt);
+            roll_Animator.get(color).update(dt);
+        }
         update_screen();
     }
 
     @Override
     public void dispose() {
         shapeRenderer.dispose();
-        idle_Animator.dispose();
-        walk_Animator.dispose();
+        for(String color : availableColors){
+            idle_Animator.get(color).dispose();
+            walk_Animator.get(color).dispose();
+            roll_Animator.get(color).dispose();
+        }
     }
 
     public void update_screen(){
@@ -88,22 +121,41 @@ public class Main extends ApplicationAdapter {
         //     idle_Animator.render(batch, state.x, state.y);  // Your cube position
         //     batch.end();
         // }
-        if(phy_handler.isWalking && phy_handler.FacingLeft){
+        if(phy_handler.roll && phy_handler.FacingLeft){
+            stateTimeForRoll += Gdx.graphics.getDeltaTime();
+            if(stateTimeForRoll >= 0.35f){
+                stateTimeForRoll = 0f;
+                phy_handler.roll = false;
+            }else{
+                roll_Animator.get(chosenColor).render_left(batch, state.x, state.y);
+                phy_handler.velocity_x -= phy_handler.x_control_speed;
+            }
+        }else if(phy_handler.roll && phy_handler.FacingRight){
+            stateTimeForRoll += Gdx.graphics.getDeltaTime();
+            if(stateTimeForRoll >= 0.35f){
+                stateTimeForRoll = 0f;
+                phy_handler.roll = false;
+            }else{
+                roll_Animator.get(chosenColor).render_left(batch, state.x, state.y);
+                phy_handler.velocity_x += phy_handler.x_control_speed;
+            }
+        }
+        else if(phy_handler.isWalking && phy_handler.FacingLeft){
 
-            walk_Animator.render_left(batch, state.x, state.y);
+            walk_Animator.get(chosenColor).render_left(batch, state.x, state.y);
 
         }else if(phy_handler.isWalking && phy_handler.FacingRight){
 
-            walk_Animator.render_right(batch, state.x, state.y);
+            walk_Animator.get(chosenColor).render_right(batch, state.x, state.y);
 
         }
         else if(phy_handler.FacingLeft){
 
-            idle_Animator.render_left(batch, state.x, state.y);
+            idle_Animator.get(chosenColor).render_left(batch, state.x, state.y);
 
         }else{
 
-            idle_Animator.render_right(batch, state.x, state.y);
+            idle_Animator.get(chosenColor).render_right(batch, state.x, state.y);
 
         }
 
@@ -116,14 +168,19 @@ public class Main extends ApplicationAdapter {
         for (ClientState state : network_handler.other_clients.values()) {
             // shapeRenderer.setColor(0, 1, 0, 1);
             // shapeRenderer.rect(state.x - phy_handler.width / 2f, state.y - phy_handler.height / 2f, phy_handler.width, phy_handler.height);
-            if(state.isWalking && state.FacingLeft){
-                walk_Animator.render_left(batch, state.x, state.y);
+            if(state.rolling && state.FacingLeft){
+                roll_Animator.get(state.color).render_left(batch, state.x, state.y);
+            }else if(state.rolling && state.FacingRight){
+                roll_Animator.get(state.color).render_right(batch, state.x, state.y);
+            }
+            else if(state.isWalking && state.FacingLeft){
+                walk_Animator.get(state.color).render_left(batch, state.x, state.y);
             }else if(state.isWalking && state.FacingRight){
-                walk_Animator.render_right(batch, state.x, state.y);
+                walk_Animator.get(state.color).render_right(batch, state.x, state.y);
             }else if(state.FacingLeft){
-                idle_Animator.render_left(batch, state.x, state.y);   
+                idle_Animator.get(state.color).render_left(batch, state.x, state.y);   
             }else{
-                idle_Animator.render_right(batch, state.x, state.y);
+                idle_Animator.get(state.color).render_right(batch, state.x, state.y);
             }
         }
 

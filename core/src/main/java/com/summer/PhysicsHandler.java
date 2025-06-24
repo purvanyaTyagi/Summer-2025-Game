@@ -15,10 +15,10 @@ public class PhysicsHandler{ //x,y represent the middle point of the generated p
     public float initial_velocity_y = 0f;
     public float jump_pow;
 
-    private volatile float accel_x = 0f;
-    private volatile float velocity_x = 0f;
-    private volatile float accel_y = 0f;
-    private volatile float velocity_y = 0f;
+    public volatile float accel_x = 0f;
+    public volatile float velocity_x = 0f;
+    public volatile float accel_y = 0f;
+    public volatile float velocity_y = 0f;
     final private float mass = 2f;
     final public float sprite_half = 20f;
 
@@ -33,32 +33,34 @@ public class PhysicsHandler{ //x,y represent the middle point of the generated p
     public boolean isWalking = false;
     public boolean FacingRight = true;
     public boolean FacingLeft = false;
+    public boolean roll = false;
+
+    public String color;
 
 
     float width = 20f;  // match sprite size
-    float height = 47f;
+    float height = 72f;
 
     public List<platform> platforms = new ArrayList<>();
 
-    public PhysicsHandler(float x, float y, float grav, float jump_pow){
+    public PhysicsHandler(float x, float y, float grav, float jump_pow, String color){
         this.x = x;
         this.y = y;
         this.grav = grav;
         this.jump_pow = jump_pow;
+        this.color = color;
+        
         velocity_x = initial_velocity_x;
         velocity_y = initial_velocity_y;
         platforms.add(new platform(-750, -500, 1500, 20));
         platforms.add(new platform(-150, -100, 100, 20));
         platforms.add(new platform(-770, -480, 20, 980));
         platforms.add(new platform(750, -480, 20, 980));
-
+        platforms.add(new platform(150, -300, 100, 20));
 
     }
 
     public ClientState update_position(float deltaTime){
-
-
-
 
         // if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
         //     velocity_y += jump_pow;
@@ -150,6 +152,7 @@ public class PhysicsHandler{ //x,y represent the middle point of the generated p
     if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE)  && isOnPlatform) {
         velocity_y += jump_pow;
         isWalking = true;
+
     }
     if (Gdx.input.isKeyPressed(Input.Keys.A) && isOnPlatform) {
         velocity_x -= x_control_speed;
@@ -162,6 +165,8 @@ public class PhysicsHandler{ //x,y represent the middle point of the generated p
         isWalking = true;
         FacingLeft = false;
         FacingRight = true;
+    }if(Gdx.input.isKeyJustPressed(Input.Keys.SHIFT_LEFT) && isOnPlatform){
+        roll = true;
     }
     
 
@@ -226,6 +231,6 @@ public class PhysicsHandler{ //x,y represent the middle point of the generated p
         velocity_x *= 0.9f; // friction
     }
 
-    return new ClientState(x, y, FacingRight, isOnPlatform, isWalking);
+    return new ClientState(x, y, FacingRight, isOnPlatform, isWalking, roll, color);
     }
 }

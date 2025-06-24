@@ -12,8 +12,12 @@ public class AnimatorWalk {
     public Animation<TextureRegion> WalkAnimationRight;
     public float stateTime = 0;
 
-    public AnimatorWalk(){
+    public AnimatorWalk(String color){
+        if(color == "b"){
+        spriteSheet = new Texture(Gdx.files.internal("knight_blue.png"));
+        }else {
         spriteSheet = new Texture(Gdx.files.internal("knight.png"));
+        }
         TextureRegion[][] tmp = TextureRegion.split(spriteSheet, 32, 32);
 
         TextureRegion[] walkFramesRight = new TextureRegion[16];
@@ -40,11 +44,11 @@ public class AnimatorWalk {
 
     public void render_left(SpriteBatch batch, float x, float y) {
         TextureRegion currentFrame = WalkAnimationLeft.getKeyFrame(stateTime, true);
-        batch.draw(currentFrame, x - 32, y - 32, 64, 64); // offset to center
+        batch.draw(currentFrame, x - 50, y - 50, 100, 100); // offset to center
     }
     public void render_right(SpriteBatch batch, float x, float y){
         TextureRegion currentFrame = WalkAnimationRight.getKeyFrame(stateTime, true);
-        batch.draw(currentFrame, x - 32, y - 32, 64, 64); // offset to center
+        batch.draw(currentFrame, x - 50, y - 50, 100, 100); // offset to center
     }
 
     public void dispose() {
