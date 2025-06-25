@@ -12,10 +12,14 @@ public class Animator {
     public float stateTime = 0;
 
     public Animator(String color) {
-        if(color == "b"){
+        if(color.equals("b")){
         spriteSheet = new Texture(Gdx.files.internal("knight_blue.png"));
-        }else {
-        spriteSheet = new Texture(Gdx.files.internal("knight.png"));
+        }else if(color.equals("r")) {
+        spriteSheet = new Texture(Gdx.files.internal("knight_Red.png"));
+        }else if(color.equals("w")){
+            spriteSheet = new Texture(Gdx.files.internal("knight_white.png"));
+        }else{
+            spriteSheet = new Texture(Gdx.files.internal("knight.png"));
         }
         // Split into 32x32 frames
         TextureRegion[][] tmp = TextureRegion.split(spriteSheet, 32, 32);

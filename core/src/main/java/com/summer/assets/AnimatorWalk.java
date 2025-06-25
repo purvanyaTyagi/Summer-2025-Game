@@ -13,11 +13,15 @@ public class AnimatorWalk {
     public float stateTime = 0;
 
     public AnimatorWalk(String color){
-        if(color == "b"){
-        spriteSheet = new Texture(Gdx.files.internal("knight_blue.png"));
-        }else {
-        spriteSheet = new Texture(Gdx.files.internal("knight.png"));
-        }
+        if(color.equals("b")){
+            spriteSheet = new Texture(Gdx.files.internal("knight_blue.png"));
+            }else if(color.equals("r")) {
+            spriteSheet = new Texture(Gdx.files.internal("knight_Red.png"));
+            }else if(color.equals("w")){
+                spriteSheet = new Texture(Gdx.files.internal("knight_white.png"));
+            }else{
+                spriteSheet = new Texture(Gdx.files.internal("knight.png"));
+            }
         TextureRegion[][] tmp = TextureRegion.split(spriteSheet, 32, 32);
 
         TextureRegion[] walkFramesRight = new TextureRegion[16];

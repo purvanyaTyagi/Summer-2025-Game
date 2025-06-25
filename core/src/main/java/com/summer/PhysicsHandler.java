@@ -1,6 +1,7 @@
 package com.summer;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 import com.badlogic.gdx.Gdx;
@@ -42,6 +43,7 @@ public class PhysicsHandler{ //x,y represent the middle point of the generated p
     float height = 72f;
 
     public List<platform> platforms = new ArrayList<>();
+    public PlatformGenerator platformGenerator = new PlatformGenerator();
 
     public PhysicsHandler(float x, float y, float grav, float jump_pow, String color){
         this.x = x;
@@ -49,15 +51,13 @@ public class PhysicsHandler{ //x,y represent the middle point of the generated p
         this.grav = grav;
         this.jump_pow = jump_pow;
         this.color = color;
-        
         velocity_x = initial_velocity_x;
         velocity_y = initial_velocity_y;
         platforms.add(new platform(-750, -500, 1500, 20));
-        platforms.add(new platform(-150, -100, 100, 20));
         platforms.add(new platform(-770, -480, 20, 980));
         platforms.add(new platform(750, -480, 20, 980));
-        platforms.add(new platform(150, -300, 100, 20));
-
+        // PlatformGenerator.generateStackedPlatforms(1500, -440, 5, 200, platforms);
+        // platforms.sort(Comparator.comparingDouble(p -> p.y));
     }
 
     public ClientState update_position(float deltaTime){

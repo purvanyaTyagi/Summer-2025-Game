@@ -23,7 +23,7 @@ public class Main extends ApplicationAdapter {
 
     public float stateTimeForRoll = 0f;
     public String chosenColor;
-    public List<String> allColors = Arrays.asList("g", "b");
+    public List<String> allColors = Arrays.asList("g", "b", "r", "w");
     public List<String> usedColors = new ArrayList<>();
     public List<String> availableColors = new ArrayList<>(allColors);
     ShapeRenderer shapeRenderer;
@@ -51,7 +51,7 @@ public class Main extends ApplicationAdapter {
             e.printStackTrace();
         }
 
-        if(network_handler.other_clients.size() >= 2){
+        if(network_handler.other_clients.size() >= 4){
             throw new RuntimeException("Maximum Client Size reached");
         }
         System.out.println(network_handler.other_clients.size());
@@ -79,6 +79,7 @@ public class Main extends ApplicationAdapter {
             walk_Animator.put(color, new AnimatorWalk(color));
             roll_Animator.put(color, new AnimatorRoll(color));
         }
+        System.out.println("Roll animators loaded: " + roll_Animator.keySet());
     }
 
     @Override
