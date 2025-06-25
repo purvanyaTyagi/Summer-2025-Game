@@ -32,8 +32,8 @@ public class Main extends ApplicationAdapter {
     OrthographicCamera camera;
     PhysicsHandler phy_handler;
     SpriteBatch batch;
-    HashMap<String, Animator> idle_Animator = new HashMap<>();    ;
-    HashMap<String, AnimatorWalk> walk_Animator = new HashMap<>();    ;
+    HashMap<String, Animator> idle_Animator = new HashMap<>();    
+    HashMap<String, AnimatorWalk> walk_Animator = new HashMap<>();    
     HashMap<String, AnimatorRoll> roll_Animator = new HashMap<>();
 
     public Main(String host, int port){
@@ -90,7 +90,7 @@ public class Main extends ApplicationAdapter {
         // if (Gdx.input.isKeyPressed(Input.Keys.S)) y -= speed * dt;
         // if (Gdx.input.isKeyPressed(Input.Keys.A)) x -= speed * dt;
         // if (Gdx.input.isKeyPressed(Input.Keys.D)) x += speed * dt;
-        state = phy_handler.update_position(dt);
+        state = phy_handler.update_position(dt, network_handler.platforms);
 
         for(String color : allColors){
             idle_Animator.get(color).update(dt);
@@ -195,7 +195,7 @@ public class Main extends ApplicationAdapter {
             }
         }
 
-        for (platform p : phy_handler.platforms) {
+        for (platform p : network_handler.platforms.values()) {
             shapeRenderer.setColor(1, 1, 1, 1);
             shapeRenderer.rect(p.x, p.y, p.width, p.height);
             // batch.draw(p.tileRegion, p.x - p.width/2, p.y - p.height/2, p.width, p.height);

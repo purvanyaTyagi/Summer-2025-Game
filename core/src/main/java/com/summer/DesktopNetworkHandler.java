@@ -2,15 +2,21 @@ package com.summer;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.*;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.*;
 
 import javax.management.RuntimeErrorException;
+
+import com.summer.assets.platform;
 
 public class DesktopNetworkHandler implements NetworkHandler{
     private DatagramSocket socket;
@@ -18,6 +24,7 @@ public class DesktopNetworkHandler implements NetworkHandler{
     private int remotePort;
     public ConcurrentHashMap<InetSocketAddress, ClientState> other_clients = new ConcurrentHashMap<>();
     ExecutorService pool = Executors.newFixedThreadPool(4);
+    ConcurrentHashMap<Integer, platform> platforms = new ConcurrentHashMap<>();
 
     public DesktopNetworkHandler(String Host, int port){
         try {
@@ -64,7 +71,7 @@ public class DesktopNetworkHandler implements NetworkHandler{
             oos.writeObject(state);
             oos.flush();
             byte[] buffer = baos.toByteArray();
-            if(buffer.length > 512){
+            if(buffer.length > 511){
                 throw new RuntimeException("CLientState length greater than allowed size");
             }
             DatagramPacket packet = new DatagramPacket(buffer, buffer.length, remoteAddress, remotePort);
@@ -83,13 +90,21 @@ public class DesktopNetworkHandler implements NetworkHandler{
                 byte[] dataCopy = new byte[packet.getLength()];
                 System.arraycopy(packet.getData(), 0, dataCopy, 0, packet.getLength());
 
-                pool.submit(() -> handleMesssage(dataCopy));
+                byte type = dataCopy[0];
+                if(type == 1){
+                    pool.submit(() -> handleMesssage(dataCopy));
+                }else if(type == 2){
+                    pool.submit(() -> handlePlatform(dataCopy));
+                }else{
+                    throw new RuntimeException("Packet type not recognized");
+                }
             }
         } catch (Exception e) {
             // TODO: handle exception
+            System.err.println("Error in receiveLoop: " + e.getMessage());
         }
     }
-    private void handleMesssage(byte[] data){
+    private void handleMesssage(byte[] receivedMessage){
         // try {
         //     ByteBuffer buffer = ByteBuffer.wrap(data);
         //     float x = buffer.getFloat();
@@ -106,6 +121,7 @@ public class DesktopNetworkHandler implements NetworkHandler{
         //     // TODO: handle exception
         // }
         try {
+            byte[] data = Arrays.copyOfRange(receivedMessage, 1, receivedMessage.length);
             ByteArrayInputStream bais = new ByteArrayInputStream(data);
             ObjectInputStream ois = new ObjectInputStream(bais);
             ClientState state = (ClientState) ois.readObject();
@@ -114,6 +130,24 @@ public class DesktopNetworkHandler implements NetworkHandler{
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+    }
+    private void handlePlatform(byte[] message){
+        DataInputStream dis = new DataInputStream(new ByteArrayInputStream(message));
+        try {
+            byte type = dis.readByte();
+            int id = dis.readInt();
+            float x = dis.readFloat();
+            float y = dis.readFloat();
+            float w = dis.readFloat();
+            float h = dis.readFloat();
+            if (!platforms.containsKey(id)) {
+                platforms.put(id, new platform(x, y, w, h));
+            }        
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
 
     }
 }

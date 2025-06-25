@@ -1,5 +1,6 @@
 package com.summer.assets;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class PlatformGenerator {
 
@@ -8,8 +9,11 @@ public class PlatformGenerator {
         int startY,
         int platformCount,
         int verticalSpacing,
-        List<platform> platforms
+        CopyOnWriteArrayList<platform> platforms
     ) {
+        platforms.add(new platform(-750, -500, 1500, 20));
+        platforms.add(new platform(-770, -480, 20, 980));
+        platforms.add(new platform(750, -480, 20, 980));
         Random rand = new Random();
 
         for (int i = 0; i < platformCount; i++) {

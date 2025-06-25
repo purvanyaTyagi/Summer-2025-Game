@@ -7,21 +7,26 @@ import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import com.summer.*;
+import com.summer.assets.*;
 
 public class GameServer implements Runnable{
     private DatagramSocket socket;
     ConcurrentHashMap<InetSocketAddress, ClientState> clients = new ConcurrentHashMap<>();
     private ExecutorService pool = Executors.newFixedThreadPool(4); // Or cached/thread-safe pool
     public volatile boolean running = true;
+    CopyOnWriteArrayList<platform> platforms = new CopyOnWriteArrayList<>();
     public void run(){
         try {
             socket = new DatagramSocket(9999);
+            PlatformGenerator.generateStackedPlatforms(1500, -440, 5, 200, platforms);
             new Thread(this::broadcastLoop).start();
+            new Thread(this::Handle_Platforms).start();
 
             while(running){
                 byte[] buffer = new byte[512];
@@ -74,8 +79,14 @@ public class GameServer implements Runnable{
                     ObjectOutputStream oos = new ObjectOutputStream(baos);
                     oos.writeObject(state);
                     oos.flush();
+                    byte[] serializedState = baos.toByteArray();
+                    
+                    byte type = 1;
+                    byte[] message = new byte[1 + serializedState.length];
+                    message[0] = type;
+                    System.arraycopy(serializedState, 0, message, 1, serializedState.length);
 
-                    byte[] message = baos.toByteArray();
+                    //byte[] message = baos.toByteArray();
 
                     for (InetSocketAddress target : clients.keySet()) {
                         if (!target.equals(addr)) {
@@ -91,6 +102,38 @@ public class GameServer implements Runnable{
         }catch(Exception e){
             e.printStackTrace();
         }
+        }
+    }
+
+    private void Handle_Platforms(){
+        while(running){
+
+            try {
+                int count = 1;
+                for(Map.Entry<InetSocketAddress, ClientState> entry : clients.entrySet()){
+                    InetSocketAddress addr = entry.getKey();
+
+
+                    for(platform p : platforms){
+                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                        DataOutputStream dos = new DataOutputStream(baos);
+            
+                        dos.writeByte(2); // type = 2 for "platform" (optional tag)
+                        dos.writeInt(count);
+                        dos.writeFloat(p.x);
+                        dos.writeFloat(p.y);
+                        dos.writeFloat(p.width);
+                        dos.writeFloat(p.height);
+            
+                        byte[] data = baos.toByteArray();
+                        DatagramPacket packet = new DatagramPacket(data, data.length, addr);
+                        socket.send(packet); 
+                        count += 1;
+                    }
+                }
+            } catch (Exception e) {
+                // TODO: handle exception
+            }
         }
     }
 

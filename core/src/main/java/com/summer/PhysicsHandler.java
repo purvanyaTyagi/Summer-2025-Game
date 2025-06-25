@@ -3,6 +3,7 @@ package com.summer;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
@@ -53,14 +54,14 @@ public class PhysicsHandler{ //x,y represent the middle point of the generated p
         this.color = color;
         velocity_x = initial_velocity_x;
         velocity_y = initial_velocity_y;
-        platforms.add(new platform(-750, -500, 1500, 20));
-        platforms.add(new platform(-770, -480, 20, 980));
-        platforms.add(new platform(750, -480, 20, 980));
+        // platforms.add(new platform(-750, -500, 1500, 20));
+        // platforms.add(new platform(-770, -480, 20, 980));
+        // platforms.add(new platform(750, -480, 20, 980));
         // PlatformGenerator.generateStackedPlatforms(1500, -440, 5, 200, platforms);
         // platforms.sort(Comparator.comparingDouble(p -> p.y));
     }
 
-    public ClientState update_position(float deltaTime){
+    public ClientState update_position(float deltaTime, ConcurrentHashMap<Integer, platform> platforms){
 
         // if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
         //     velocity_y += jump_pow;
@@ -179,7 +180,7 @@ public class PhysicsHandler{ //x,y represent the middle point of the generated p
     isOnPlatform = false;
 
     // === Platform collision handling ===
-    for (platform p : platforms) {
+    for (platform p : platforms.values()) {
         float px = p.x;
         float py = p.y;
         float pw = p.width;
