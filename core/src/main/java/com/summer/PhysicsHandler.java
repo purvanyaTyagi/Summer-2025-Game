@@ -61,7 +61,7 @@ public class PhysicsHandler{ //x,y represent the middle point of the generated p
         // platforms.sort(Comparator.comparingDouble(p -> p.y));
     }
 
-    public ClientState update_position(float deltaTime, ConcurrentHashMap<Integer, platform> platforms){
+    public ClientState update_position(float deltaTime, ConcurrentHashMap<Integer, platform> platforms, int client_stage){
 
         // if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
         //     velocity_y += jump_pow;
@@ -232,6 +232,21 @@ public class PhysicsHandler{ //x,y represent the middle point of the generated p
         velocity_x *= 0.9f; // friction
     }
 
-    return new ClientState(x, y, FacingRight, isOnPlatform, isWalking, roll, color);
+    return new ClientState(x, y, FacingRight, isOnPlatform, isWalking, roll, color, client_stage);
+    }
+    
+    public void reset(float x, float y) {
+        this.x = x;
+        this.y = y;
+        this.velocity_x = 0f;
+        this.velocity_y = 0f;
+        this.accel_x = 0f;
+        this.accel_y = 0f;
+
+
+        this.isWalking = false;
+        this.roll = false;
+        this.FacingRight = true;
+        this.FacingLeft = false;
     }
 }

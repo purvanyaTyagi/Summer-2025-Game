@@ -20,11 +20,13 @@ public class GameServer implements Runnable{
     ConcurrentHashMap<InetSocketAddress, ClientState> clients = new ConcurrentHashMap<>();
     private ExecutorService pool = Executors.newFixedThreadPool(4); // Or cached/thread-safe pool
     public volatile boolean running = true;
-    CopyOnWriteArrayList<platform> platforms = new CopyOnWriteArrayList<>();
+    ConcurrentHashMap<Integer, CopyOnWriteArrayList<platform>>  stages = new ConcurrentHashMap<>();
     public void run(){
         try {
             socket = new DatagramSocket(9999);
-            PlatformGenerator.generateStackedPlatforms(1500, -440, 5, 200, platforms);
+            CopyOnWriteArrayList<platform> stage_0 = new CopyOnWriteArrayList<>();
+            PlatformGenerator.generateStackedPlatforms(1500, -400, 7, 150, stage_0);
+            stages.put(0, stage_0);
             new Thread(this::broadcastLoop).start();
             new Thread(this::Handle_Platforms).start();
 
@@ -113,11 +115,19 @@ public class GameServer implements Runnable{
                 for(Map.Entry<InetSocketAddress, ClientState> entry : clients.entrySet()){
                     InetSocketAddress addr = entry.getKey();
 
+                    CopyOnWriteArrayList<platform> platforms = new CopyOnWriteArrayList<>();
+                    platforms = stages.get(entry.getValue().client_stage);
+
+                    if(platforms == null){
+                        CopyOnWriteArrayList<platform> new_stage = new CopyOnWriteArrayList<>();
+                        PlatformGenerator.generateStackedPlatforms(1500, -400, 7, 150, new_stage);
+                        stages.put(entry.getValue().client_stage, new_stage);      
+                        platforms = new_stage;
+                    }
 
                     for(platform p : platforms){
                         ByteArrayOutputStream baos = new ByteArrayOutputStream();
                         DataOutputStream dos = new DataOutputStream(baos);
-            
                         dos.writeByte(2); // type = 2 for "platform" (optional tag)
                         dos.writeInt(count);
                         dos.writeFloat(p.x);
@@ -137,6 +147,9 @@ public class GameServer implements Runnable{
         }
     }
 
+    public void add_stage(){ 
+
+    }
     // public byte[] encodeMessage(float x, float y, InetSocketAddress addr) throws Exception {
     //     byte[] ipStr = addr.toString().getBytes("UTF-8");
     //     ByteBuffer buffer = ByteBuffer.allocate(4 + 4 + ipStr.length + 4); // 2 floats + IP string + string length

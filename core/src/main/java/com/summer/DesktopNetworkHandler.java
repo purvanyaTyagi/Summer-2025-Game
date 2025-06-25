@@ -141,9 +141,8 @@ public class DesktopNetworkHandler implements NetworkHandler{
             float y = dis.readFloat();
             float w = dis.readFloat();
             float h = dis.readFloat();
-            if (!platforms.containsKey(id)) {
-                platforms.put(id, new platform(x, y, w, h));
-            }        
+            platforms.put(id, new platform(x, y, w, h));
+            //if (!platforms.containsKey(id)) {            }        
         } catch (IOException e) {
             e.printStackTrace();
         }

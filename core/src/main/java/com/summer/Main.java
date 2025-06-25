@@ -6,6 +6,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
@@ -26,6 +27,7 @@ public class Main extends ApplicationAdapter {
     public List<String> allColors = Arrays.asList("g", "b", "r", "w");
     public List<String> usedColors = new ArrayList<>();
     public List<String> availableColors = new ArrayList<>(allColors);
+    public boolean waitingForStageData;
     ShapeRenderer shapeRenderer;
     DesktopNetworkHandler network_handler;
     ClientState state;
@@ -42,7 +44,7 @@ public class Main extends ApplicationAdapter {
 
     @Override
     public void create() {
-        state = new ClientState(0f, 0f, true, false, false, false, "g");
+        state = new ClientState(0f, -440f, true, false, false, false, "g", 0);
         network_handler.sendPosition(state);
 
         try {
@@ -71,7 +73,7 @@ public class Main extends ApplicationAdapter {
 
         shapeRenderer = new ShapeRenderer();
         camera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-        phy_handler = new PhysicsHandler(state.x, state.y, -500f, 700f, chosenColor);
+        phy_handler = new PhysicsHandler(state.x, state.y, -500f, 600f, chosenColor);
         batch = new SpriteBatch();
 
         for(String color : allColors){
@@ -90,13 +92,39 @@ public class Main extends ApplicationAdapter {
         // if (Gdx.input.isKeyPressed(Input.Keys.S)) y -= speed * dt;
         // if (Gdx.input.isKeyPressed(Input.Keys.A)) x -= speed * dt;
         // if (Gdx.input.isKeyPressed(Input.Keys.D)) x += speed * dt;
-        state = phy_handler.update_position(dt, network_handler.platforms);
+        if (waitingForStageData) {
+            if (network_handler.platforms.size() > 0) {
+                waitingForStageData = false;
+            } else {
+                update_screen(); // draw old frame
+                return; // skip physics update
+            }
+        }
+
+        state = phy_handler.update_position(dt, network_handler.platforms, state.client_stage);
 
         for(String color : allColors){
             idle_Animator.get(color).update(dt);
             walk_Animator.get(color).update(dt);
             roll_Animator.get(color).update(dt);
         }
+        if(state.y >= 500){
+            state.client_stage += 1;
+            //phy_handler.y = -440f;
+            phy_handler.reset(state.x, -440f);
+            network_handler.sendPosition(state);
+            network_handler.platforms.clear();
+            waitingForStageData = true;
+            // Gdx.gl.glClearColor(0, 0, 0, 1); // RGBA: black with full opacity
+            // Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+            // camera.update();
+            // try {
+            //     Thread.sleep(1000);
+            // } catch (Exception e) {
+            //     // TODO: handle exception
+            // }
+        }
+
         update_screen();
     }
 
@@ -167,7 +195,6 @@ public class Main extends ApplicationAdapter {
         }else{
 
             idle_Animator.get(chosenColor).render_right(batch, state.x, state.y);
-
         }
 
         // if(walk_Animator.WalkAnimation.getKeyFrame(walk_Animator.stateTime, true).isFlipX() != !phy_handler.FacingRight){
@@ -177,7 +204,7 @@ public class Main extends ApplicationAdapter {
 
 
         for (ClientState state : network_handler.other_clients.values()) {
-            // shapeRenderer.setColor(0, 1, 0, 1);
+            if(this.state.client_stage == state.client_stage){            // shapeRenderer.setColor(0, 1, 0, 1);
             // shapeRenderer.rect(state.x - phy_handler.width / 2f, state.y - phy_handler.height / 2f, phy_handler.width, phy_handler.height);
             if(state.rolling && state.FacingLeft){
                 roll_Animator.get(state.color).render_left(batch, state.x, state.y);
@@ -193,6 +220,7 @@ public class Main extends ApplicationAdapter {
             }else{
                 idle_Animator.get(state.color).render_right(batch, state.x, state.y);
             }
+        }
         }
 
         for (platform p : network_handler.platforms.values()) {
