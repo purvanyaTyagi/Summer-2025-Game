@@ -29,6 +29,7 @@ public class GameServer implements Runnable{
             stages.put(0, stage_0);
             new Thread(this::broadcastLoop).start();
             new Thread(this::Handle_Platforms).start();
+            new Thread(this::cleanupLoop).start();
 
             while(running){
                 byte[] buffer = new byte[512];
@@ -52,11 +53,13 @@ public class GameServer implements Runnable{
         InetSocketAddress client_addr = new InetSocketAddress(clientIP, clientPort);
 
         try {
-            ByteArrayInputStream bais = new ByteArrayInputStream(data);
-            ObjectInputStream ois = new ObjectInputStream(bais);
+            // ByteArrayInputStream bais = new ByteArrayInputStream(data);
+            // ObjectInputStream ois = new ObjectInputStream(bais);
 
-            ClientState client_state = (ClientState) ois.readObject();
+            // ClientState client_state = (ClientState) ois.readObject();
+            ClientState client_state = new ClientState(data);
             client_state.sock_address = client_addr;
+            client_state.lastSeen = System.currentTimeMillis();
             clients.put(client_addr, client_state);
             System.out.println("Received Packet from port No: " + clientPort);
         } catch (Exception e) {
@@ -77,11 +80,11 @@ public class GameServer implements Runnable{
                     ClientState state = entry.getValue();
                     // float x = state.x;
                     // float y = state.y;
-                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                    ObjectOutputStream oos = new ObjectOutputStream(baos);
-                    oos.writeObject(state);
-                    oos.flush();
-                    byte[] serializedState = baos.toByteArray();
+                    // ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    // ObjectOutputStream oos = new ObjectOutputStream(baos);
+                    // oos.writeObject(state);
+                    // oos.flush();
+                    byte[] serializedState = state.serialize();
                     
                     byte type = 1;
                     byte[] message = new byte[1 + serializedState.length];
@@ -143,6 +146,35 @@ public class GameServer implements Runnable{
                 }
             } catch (Exception e) {
                 // TODO: handle exception
+            }
+        }
+    }
+
+    public void cleanupLoop(){
+        while(running){
+            try {
+                long now = System.currentTimeMillis();
+                for (Map.Entry<InetSocketAddress, ClientState> entry : clients.entrySet()) {
+                    if (now - entry.getValue().lastSeen > 5_000) { // 10 seconds timeout
+                        clients.remove(entry.getKey());
+                        System.out.println("Removed inactive client: " + entry.getKey());
+                    }
+                }
+                for (Integer stageId : stages.keySet()) {
+                    boolean ShouldBeRemoved = true;
+                    for(ClientState client_states : clients.values()){
+                        if(client_states.client_stage <= stageId){
+                            ShouldBeRemoved = false;
+                        }
+                    }
+                    if(ShouldBeRemoved){
+                        stages.remove(stageId);
+                        System.out.println("Removed Stage No: " + stageId);
+                    }
+                }                
+                Thread.sleep(1000); // Check every second
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }

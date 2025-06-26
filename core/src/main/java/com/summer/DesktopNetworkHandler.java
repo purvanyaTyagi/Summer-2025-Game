@@ -13,6 +13,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.*;
+import java.util.Scanner;
 
 import javax.management.RuntimeErrorException;
 
@@ -32,6 +33,7 @@ public class DesktopNetworkHandler implements NetworkHandler{
             remoteAddress = InetAddress.getByName(Host);
             remotePort = port;
             new Thread(this::receiveLoop).start();
+            new Thread(this::cleanupLoop).start();
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -66,11 +68,7 @@ public class DesktopNetworkHandler implements NetworkHandler{
         //     e.printStackTrace();
         // }
         try {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            ObjectOutputStream oos = new ObjectOutputStream(baos);
-            oos.writeObject(state);
-            oos.flush();
-            byte[] buffer = baos.toByteArray();
+            byte[] buffer = state.serialize();
             if(buffer.length > 511){
                 throw new RuntimeException("CLientState length greater than allowed size");
             }
@@ -122,9 +120,7 @@ public class DesktopNetworkHandler implements NetworkHandler{
         // }
         try {
             byte[] data = Arrays.copyOfRange(receivedMessage, 1, receivedMessage.length);
-            ByteArrayInputStream bais = new ByteArrayInputStream(data);
-            ObjectInputStream ois = new ObjectInputStream(bais);
-            ClientState state = (ClientState) ois.readObject();
+            ClientState state = new ClientState(data);
             other_clients.put(state.sock_address, state);
 
         } catch (Exception e) {
@@ -148,5 +144,22 @@ public class DesktopNetworkHandler implements NetworkHandler{
         }
 
 
+    }
+
+    public void cleanupLoop(){
+        while(true){
+            try {
+                long now = System.currentTimeMillis();
+                for (Map.Entry<InetSocketAddress, ClientState> entry : other_clients.entrySet()) {
+                    if (now - entry.getValue().lastSeen > 5_000) { // 10 seconds timeout
+                        other_clients.remove(entry.getKey());
+                        System.out.println("Removed inactive client: " + entry.getKey());
+                    }
+                }
+                Thread.sleep(1000); // Check every second
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 }

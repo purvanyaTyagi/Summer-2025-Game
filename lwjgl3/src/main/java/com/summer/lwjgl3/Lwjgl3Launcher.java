@@ -1,6 +1,8 @@
 package com.summer.lwjgl3;
 
 
+import java.util.Scanner;
+
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
 import com.summer.Main;
@@ -11,6 +13,7 @@ public class Lwjgl3Launcher {
     private static boolean withServer = false;
     private static boolean clientOnly = false;
     private static boolean serverOnly = false;
+    public static String server_address = "127.0.0.1";
 
     public static void main(String[] args) {
         for (String arg : args) {
@@ -85,6 +88,10 @@ public class Lwjgl3Launcher {
     }
 
     private static void runClientOnly() {
+        // Scanner sc = new Scanner(System.in);
+        // System.out.print("Required! Enter your server ip(remote/public), write 127.0.0.1 if server is on localMachine: ");
+        // server_address = sc.nextLine();
+
         System.out.println("Running in client-only mode");
         if (StartupHelper.startNewJvmIfRequired()) return; // This handles macOS support and helps on Windows.
         createApplication();
@@ -98,7 +105,7 @@ public class Lwjgl3Launcher {
     }
 
     private static Lwjgl3Application createApplication() {
-        return new Lwjgl3Application(new Main("127.0.0.1", 9999), getDefaultConfiguration()); //server address goes here. If using -withServer keep this as local host.
+        return new Lwjgl3Application(new Main(server_address, 9999), getDefaultConfiguration()); //server address goes here. If using -withServer keep this as local host.
     }
 
     private static Lwjgl3ApplicationConfiguration getDefaultConfiguration() {
