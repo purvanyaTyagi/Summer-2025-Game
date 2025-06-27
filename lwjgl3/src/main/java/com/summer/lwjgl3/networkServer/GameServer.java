@@ -18,9 +18,14 @@ import com.summer.assets.*;
 public class GameServer implements Runnable{
     private DatagramSocket socket;
     ConcurrentHashMap<InetSocketAddress, ClientState> clients = new ConcurrentHashMap<>();
-    private ExecutorService pool = Executors.newFixedThreadPool(4); // Or cached/thread-safe pool
+    private ExecutorService pool = Executors.newFixedThreadPool(8); // Or cached/thread-safe pool
     public volatile boolean running = true;
     ConcurrentHashMap<Integer, CopyOnWriteArrayList<platform>>  stages = new ConcurrentHashMap<>();
+    int maxPacketSize = 512; // safe size for most networks
+    int platformSize = 1 + 4 + 4 * 4; // type (1) + id (4) + 4 floats
+
+    int maxPlatforms = (maxPacketSize - 1) / platformSize; // leave 1 byte for overall type
+
     public void run(){
         try {
             socket = new DatagramSocket(9999);
@@ -61,7 +66,7 @@ public class GameServer implements Runnable{
             client_state.sock_address = client_addr;
             client_state.lastSeen = System.currentTimeMillis();
             clients.put(client_addr, client_state);
-            System.out.println("Received Packet from port No: " + clientPort);
+            //System.out.println("Received Packet from port No: " + clientPort);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -101,9 +106,17 @@ public class GameServer implements Runnable{
                             );
                             socket.send(packet);
                         }
-                }     
+                }
+                byte[] ack_message = new byte[1];
+                ack_message[0] = 3;
+                DatagramPacket packet = new DatagramPacket(
+                                ack_message, ack_message.length,
+                                addr.getAddress(), addr.getPort()
+                            );
+                socket.send(packet);
+
             }
-        Thread.sleep(1);
+        //Thread.sleep(1);
         }catch(Exception e){
             e.printStackTrace();
         }
@@ -128,21 +141,32 @@ public class GameServer implements Runnable{
                         platforms = new_stage;
                     }
 
+                    ByteBuffer buffer = ByteBuffer.allocate(1 + platforms.size() * platformSize);
+                    buffer.put((byte) 2);
                     for(platform p : platforms){
-                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                        DataOutputStream dos = new DataOutputStream(baos);
-                        dos.writeByte(2); // type = 2 for "platform" (optional tag)
-                        dos.writeInt(count);
-                        dos.writeFloat(p.x);
-                        dos.writeFloat(p.y);
-                        dos.writeFloat(p.width);
-                        dos.writeFloat(p.height);
+                        // ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                        // DataOutputStream dos = new DataOutputStream(baos);
+                        // dos.writeByte(2); // type = 2 for "platform" (optional tag)
+                        // dos.writeInt(count);
+                        // dos.writeFloat(p.x);
+                        // dos.writeFloat(p.y);
+                        // dos.writeFloat(p.width);
+                        // dos.writeFloat(p.height);
             
-                        byte[] data = baos.toByteArray();
-                        DatagramPacket packet = new DatagramPacket(data, data.length, addr);
-                        socket.send(packet); 
-                        count += 1;
+                        // byte[] data = baos.toByteArray();
+                        // DatagramPacket packet = new DatagramPacket(data, data.length, addr);
+                        // socket.send(packet); 
+                        // count += 1;
+                        buffer.putInt(count);      // ID
+                        buffer.putFloat(p.x);        // X
+                        buffer.putFloat(p.y);        // Y
+                        buffer.putFloat(p.width);    // Width
+                        buffer.putFloat(p.height);   // Height    
+                        count += 1;                
                     }
+                    byte[] data = buffer.array();
+                    DatagramPacket packet = new DatagramPacket(data, data.length, addr);
+                    socket.send(packet);
                 }
             } catch (Exception e) {
                 // TODO: handle exception
@@ -167,7 +191,7 @@ public class GameServer implements Runnable{
                             ShouldBeRemoved = false;
                         }
                     }
-                    if(ShouldBeRemoved){
+                    if(ShouldBeRemoved && stageId != 0){
                         stages.remove(stageId);
                         System.out.println("Removed Stage No: " + stageId);
                     }

@@ -13,7 +13,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.*;
-import java.util.Scanner;
 
 import javax.management.RuntimeErrorException;
 
@@ -26,6 +25,7 @@ public class DesktopNetworkHandler implements NetworkHandler{
     public ConcurrentHashMap<InetSocketAddress, ClientState> other_clients = new ConcurrentHashMap<>();
     ExecutorService pool = Executors.newFixedThreadPool(4);
     ConcurrentHashMap<Integer, platform> platforms = new ConcurrentHashMap<>();
+    public volatile boolean serverAcknowledged = false;
 
     public DesktopNetworkHandler(String Host, int port){
         try {
@@ -93,6 +93,8 @@ public class DesktopNetworkHandler implements NetworkHandler{
                     pool.submit(() -> handleMesssage(dataCopy));
                 }else if(type == 2){
                     pool.submit(() -> handlePlatform(dataCopy));
+                }else if(type == 3){
+                    serverAcknowledged = true;
                 }else{
                     throw new RuntimeException("Packet type not recognized");
                 }
@@ -129,17 +131,28 @@ public class DesktopNetworkHandler implements NetworkHandler{
 
     }
     private void handlePlatform(byte[] message){
-        DataInputStream dis = new DataInputStream(new ByteArrayInputStream(message));
+        //DataInputStream dis = new DataInputStream(new ByteArrayInputStream(message));
+        ByteBuffer buffer = ByteBuffer.wrap(message);
+        byte type = buffer.get();
         try {
-            byte type = dis.readByte();
-            int id = dis.readInt();
-            float x = dis.readFloat();
-            float y = dis.readFloat();
-            float w = dis.readFloat();
-            float h = dis.readFloat();
-            platforms.put(id, new platform(x, y, w, h));
+            while(buffer.remaining() >= 21){
+                int id = buffer.getInt();
+                float x = buffer.getFloat();
+                float y = buffer.getFloat();
+                float w = buffer.getFloat();
+                float h = buffer.getFloat();
+                platforms.put(id, new platform(x, y, w, h));
+            }
+            // byte type = dis.readByte();
+            // int id = dis.readInt();
+            // float x = dis.readFloat();
+            // float y = dis.readFloat();
+            // float w = dis.readFloat();
+            // float h = dis.readFloat();
+            // platforms.put(id, new platform(x, y, w, h));
+
             //if (!platforms.containsKey(id)) {            }        
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
 

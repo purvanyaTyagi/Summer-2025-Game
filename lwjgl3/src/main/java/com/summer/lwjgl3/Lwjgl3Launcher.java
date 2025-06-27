@@ -1,6 +1,7 @@
 package com.summer.lwjgl3;
 
 
+import java.util.NoSuchElementException;
 import java.util.Scanner;
 
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application;
@@ -13,7 +14,11 @@ public class Lwjgl3Launcher {
     private static boolean withServer = false;
     private static boolean clientOnly = false;
     private static boolean serverOnly = false;
+    // public static String server_address = "147.185.221.17";
+    // public static int server_port = 9437;
     public static String server_address = "127.0.0.1";
+    public static int server_port = 9999;
+
 
     public static void main(String[] args) {
         for (String arg : args) {
@@ -88,14 +93,39 @@ public class Lwjgl3Launcher {
     }
 
     private static void runClientOnly() {
-        // Scanner sc = new Scanner(System.in);
-        // System.out.print("Required! Enter your server ip(remote/public), write 127.0.0.1 if server is on localMachine: ");
-        // server_address = sc.nextLine();
+        try {
+            Scanner sc = new Scanner(System.in);
 
-        System.out.println("Running in client-only mode");
-        if (StartupHelper.startNewJvmIfRequired()) return; // This handles macOS support and helps on Windows.
+            System.out.print("Enter your server IP (default: 127.0.0.1): ");
+            String ipInput = sc.nextLine().trim();
+            if (!ipInput.isEmpty()) {
+                server_address = ipInput;
+            }
+
+            System.out.print("Enter server port (default: 9999): ");
+            String portInput = sc.nextLine().trim();
+            if (!portInput.isEmpty()) {
+                try {
+                    int port = Integer.parseInt(portInput);
+                    if (port >= 1 && port <= 65535) {
+                        server_port = port;
+                    } else {
+                        System.out.println("Invalid port range, using default: " + server_port);
+                    }
+                } catch (NumberFormatException e) {
+                    System.out.println("Invalid port input, using default: " + server_port);
+                }
+            }
+        } catch (NoSuchElementException e) {
+            System.out.println("No console input available. Using default server IP (" + server_address +
+                            ") and port (" + server_port + ").");
+        }
+
+        System.out.println("Running in client-only mode on " + server_address + ":" + server_port);
+        if (StartupHelper.startNewJvmIfRequired()) return; // macOS/Windows helper
         createApplication();
     }
+
 
     private static void runServerOnly() {
         System.out.println("Running in server-only mode");
@@ -105,7 +135,7 @@ public class Lwjgl3Launcher {
     }
 
     private static Lwjgl3Application createApplication() {
-        return new Lwjgl3Application(new Main(server_address, 9999), getDefaultConfiguration()); //server address goes here. If using -withServer keep this as local host.
+        return new Lwjgl3Application(new Main(server_address, server_port), getDefaultConfiguration()); //server address goes here. If using -withServer keep this as local host.
     }
 
     private static Lwjgl3ApplicationConfiguration getDefaultConfiguration() {

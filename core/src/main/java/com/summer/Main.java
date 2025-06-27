@@ -15,6 +15,13 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.maps.tiled.TiledMap;
+import com.badlogic.gdx.maps.tiled.TmxMapLoader;
+import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
+import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.math.Matrix4;
+import com.badlogic.gdx.math.Vector3;
+
 
 import com.summer.assets.*;
 
@@ -27,16 +34,23 @@ public class Main extends ApplicationAdapter {
     public List<String> allColors = Arrays.asList("g", "b", "r", "w");
     public List<String> usedColors = new ArrayList<>();
     public List<String> availableColors = new ArrayList<>(allColors);
-    public boolean waitingForStageData;
+    public boolean waitingForStageData = true;
     ShapeRenderer shapeRenderer;
     DesktopNetworkHandler network_handler;
     ClientState state;
     OrthographicCamera camera;
+    TiledMap map;
+    OrthogonalTiledMapRenderer mapRenderer;
     PhysicsHandler phy_handler;
     SpriteBatch batch;
     HashMap<String, Animator> idle_Animator = new HashMap<>();    
     HashMap<String, AnimatorWalk> walk_Animator = new HashMap<>();    
     HashMap<String, AnimatorRoll> roll_Animator = new HashMap<>();
+
+    int maxWaitMillis = 3000;
+    int waited = 0;
+    int interval = 10;
+
 
     public Main(String host, int port){
         network_handler = new DesktopNetworkHandler(host, port);
@@ -45,7 +59,22 @@ public class Main extends ApplicationAdapter {
     @Override
     public void create() {
         state = new ClientState(0f, -440f, true, false, false, false, "g", 0);
-        network_handler.sendPosition(state);
+        
+        while (!network_handler.serverAcknowledged && waited < maxWaitMillis) {
+            network_handler.sendPosition(state);  // Send UDP position again
+            try {
+                Thread.sleep(interval);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+                break;
+            }
+            waited += interval;
+        }
+        
+        if (!network_handler.serverAcknowledged) {
+            throw new RuntimeException("Did not receive ACK from server after multiple retries.");
+        }
+        
 
         try {
             Thread.sleep(200);
@@ -73,6 +102,10 @@ public class Main extends ApplicationAdapter {
 
         shapeRenderer = new ShapeRenderer();
         camera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        //camera.position.set(1536 / 2f, 1024 / 2f, 0); // center camera on the tilemap
+        map = new TmxMapLoader().load("Tileset/timemap.tmx");
+        // If scaling tiles 4x (16x16 → 64x64 in-game), use unitScale = 4f
+        mapRenderer = new OrthogonalTiledMapRenderer(map, 4f);  
         phy_handler = new PhysicsHandler(state.x, state.y, -500f, 600f, chosenColor);
         batch = new SpriteBatch();
 
@@ -144,6 +177,8 @@ public class Main extends ApplicationAdapter {
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         camera.update();
+        // mapRenderer.setView(camera);
+        // mapRenderer.render();
         shapeRenderer.setProjectionMatrix(camera.combined);
         batch.setProjectionMatrix(camera.combined);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
