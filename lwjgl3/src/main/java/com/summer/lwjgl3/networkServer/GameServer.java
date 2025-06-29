@@ -30,7 +30,7 @@ public class GameServer implements Runnable{
         try {
             socket = new DatagramSocket(9999);
             CopyOnWriteArrayList<platform> stage_0 = new CopyOnWriteArrayList<>();
-            PlatformGenerator.generateStackedPlatforms(1500, -400, 7, 150, stage_0);
+            PlatformGenerator.generateStackedPlatforms(1500, -385, 3, 254, stage_0);
             stages.put(0, stage_0);
             new Thread(this::broadcastLoop).start();
             new Thread(this::Handle_Platforms).start();
@@ -136,7 +136,7 @@ public class GameServer implements Runnable{
 
                     if(platforms == null){
                         CopyOnWriteArrayList<platform> new_stage = new CopyOnWriteArrayList<>();
-                        PlatformGenerator.generateStackedPlatforms(1500, -400, 7, 150, new_stage);
+                        PlatformGenerator.generateStackedPlatforms(1500, -385, 3, 254, new_stage);
                         stages.put(entry.getValue().client_stage, new_stage);      
                         platforms = new_stage;
                     }

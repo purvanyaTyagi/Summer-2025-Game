@@ -141,7 +141,11 @@ public class DesktopNetworkHandler implements NetworkHandler{
                 float y = buffer.getFloat();
                 float w = buffer.getFloat();
                 float h = buffer.getFloat();
-                platforms.put(id, new platform(x, y, w, h));
+                if(w > 500f || h > 500f){
+                    platforms.put(id, new platform(x, y, w, h, true));
+                }else{
+                    platforms.put(id, new platform(x, y, w, h, false));
+                }
             }
             // byte type = dis.readByte();
             // int id = dis.readInt();

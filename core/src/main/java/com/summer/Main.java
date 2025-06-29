@@ -14,6 +14,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.TmxMapLoader;
@@ -46,6 +47,9 @@ public class Main extends ApplicationAdapter {
     HashMap<String, Animator> idle_Animator = new HashMap<>();    
     HashMap<String, AnimatorWalk> walk_Animator = new HashMap<>();    
     HashMap<String, AnimatorRoll> roll_Animator = new HashMap<>();
+    DrawPlatformTexture platform_texture;
+    public float offset_x = 1536 / 2f;
+    public float offset_y = 1024 / 2f;
 
     int maxWaitMillis = 3000;
     int waited = 0;
@@ -102,12 +106,14 @@ public class Main extends ApplicationAdapter {
 
         shapeRenderer = new ShapeRenderer();
         camera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-        //camera.position.set(1536 / 2f, 1024 / 2f, 0); // center camera on the tilemap
+        camera.position.set(offset_x, offset_y, 0); // center camera on the tilemap
         map = new TmxMapLoader().load("Tileset/timemap.tmx");
         // If scaling tiles 4x (16x16 → 64x64 in-game), use unitScale = 4f
         mapRenderer = new OrthogonalTiledMapRenderer(map, 4f);  
-        phy_handler = new PhysicsHandler(state.x, state.y, -500f, 600f, chosenColor);
+        phy_handler = new PhysicsHandler(state.x, state.y, -500f, 750f, chosenColor);
+
         batch = new SpriteBatch();
+        platform_texture = new DrawPlatformTexture();
 
         for(String color : allColors){
             idle_Animator.put(color, new Animator(color));
@@ -177,12 +183,17 @@ public class Main extends ApplicationAdapter {
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         camera.update();
-        // mapRenderer.setView(camera);
-        // mapRenderer.render();
+        mapRenderer.setView(camera);
+        mapRenderer.render();
         shapeRenderer.setProjectionMatrix(camera.combined);
         batch.setProjectionMatrix(camera.combined);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        // batch.setShader(vignetteShader);
+        // vignetteShader.bind();
+        // vignetteShader.setUniformf("resolution", Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         batch.begin();
+        // batch.draw(whitePixelTexture, 0, 0, screenWidth, screenHeight); // whitePixelTexture is a 1x1 white texture stretched to screen
+
 
         // shapeRenderer.setColor(1, 0, 0, 1);
         // shapeRenderer.rect(state.x - phy_handler.width / 2f, state.y - phy_handler.height / 2f, phy_handler.width, phy_handler.height);
@@ -201,7 +212,7 @@ public class Main extends ApplicationAdapter {
                 stateTimeForRoll = 0f;
                 phy_handler.roll = false;
             }else{
-                roll_Animator.get(chosenColor).render_left(batch, state.x, state.y);
+                roll_Animator.get(chosenColor).render_left(batch, state.x + offset_x, state.y + offset_y);
                 phy_handler.velocity_x -= phy_handler.x_control_speed;
             }
         }else if(phy_handler.roll && phy_handler.FacingRight){
@@ -210,26 +221,26 @@ public class Main extends ApplicationAdapter {
                 stateTimeForRoll = 0f;
                 phy_handler.roll = false;
             }else{
-                roll_Animator.get(chosenColor).render_left(batch, state.x, state.y);
+                roll_Animator.get(chosenColor).render_left(batch, state.x + offset_x, state.y + offset_y);
                 phy_handler.velocity_x += phy_handler.x_control_speed;
             }
         }
         else if(phy_handler.isWalking && phy_handler.FacingLeft){
 
-            walk_Animator.get(chosenColor).render_left(batch, state.x, state.y);
+            walk_Animator.get(chosenColor).render_left(batch, state.x + offset_x, state.y + offset_y);
 
         }else if(phy_handler.isWalking && phy_handler.FacingRight){
 
-            walk_Animator.get(chosenColor).render_right(batch, state.x, state.y);
+            walk_Animator.get(chosenColor).render_right(batch, state.x + offset_x, state.y + offset_y);
 
         }
         else if(phy_handler.FacingLeft){
 
-            idle_Animator.get(chosenColor).render_left(batch, state.x, state.y);
+            idle_Animator.get(chosenColor).render_left(batch, state.x + offset_x, state.y + offset_y);
 
         }else{
 
-            idle_Animator.get(chosenColor).render_right(batch, state.x, state.y);
+            idle_Animator.get(chosenColor).render_right(batch, state.x + offset_x, state.y + offset_y);
         }
 
         // if(walk_Animator.WalkAnimation.getKeyFrame(walk_Animator.stateTime, true).isFlipX() != !phy_handler.FacingRight){
@@ -242,29 +253,32 @@ public class Main extends ApplicationAdapter {
             if(this.state.client_stage == state.client_stage){            // shapeRenderer.setColor(0, 1, 0, 1);
             // shapeRenderer.rect(state.x - phy_handler.width / 2f, state.y - phy_handler.height / 2f, phy_handler.width, phy_handler.height);
             if(state.rolling && state.FacingLeft){
-                roll_Animator.get(state.color).render_left(batch, state.x, state.y);
+                roll_Animator.get(state.color).render_left(batch, state.x + offset_x, state.y + offset_y);
             }else if(state.rolling && state.FacingRight){
-                roll_Animator.get(state.color).render_right(batch, state.x, state.y);
+                roll_Animator.get(state.color).render_right(batch, state.x + offset_x, state.y + offset_y);
             }
             else if(state.isWalking && state.FacingLeft){
-                walk_Animator.get(state.color).render_left(batch, state.x, state.y);
+                walk_Animator.get(state.color).render_left(batch, state.x + offset_x, state.y + offset_y);
             }else if(state.isWalking && state.FacingRight){
-                walk_Animator.get(state.color).render_right(batch, state.x, state.y);
+                walk_Animator.get(state.color).render_right(batch, state.x + offset_x, state.y + offset_y);
             }else if(state.FacingLeft){
-                idle_Animator.get(state.color).render_left(batch, state.x, state.y);   
+                idle_Animator.get(state.color).render_left(batch, state.x + offset_x, state.y + offset_y);   
             }else{
-                idle_Animator.get(state.color).render_right(batch, state.x, state.y);
+                idle_Animator.get(state.color).render_right(batch, state.x + offset_x, state.y + offset_y);
             }
         }
         }
 
         for (platform p : network_handler.platforms.values()) {
-            shapeRenderer.setColor(1, 1, 1, 1);
-            shapeRenderer.rect(p.x, p.y, p.width, p.height);
+            // shapeRenderer.setColor(1, 1, 1, 1);
+            // shapeRenderer.rect(p.x + offset_x, p.y + offset_y, p.width, p.height);
+             platform_texture.drawPlatformTiled(batch, p);
+
             // batch.draw(p.tileRegion, p.x - p.width/2, p.y - p.height/2, p.width, p.height);
         }
         batch.end();
         shapeRenderer.end();
+
     }
 }
 

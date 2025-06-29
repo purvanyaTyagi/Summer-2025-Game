@@ -38,8 +38,6 @@ public class PhysicsHandler{ //x,y represent the middle point of the generated p
     public boolean roll = false;
 
     public String color;
-
-
     float width = 20f;  // match sprite size
     float height = 72f;
 
