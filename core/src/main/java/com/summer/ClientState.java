@@ -13,6 +13,7 @@ public class ClientState{
     public boolean isOnPlatform;
     public boolean isWalking;
     public boolean rolling;
+    public boolean inLobby = true;
     public String color;
     public InetSocketAddress sock_address = new InetSocketAddress("127.0.0.1", 9999); //this is the address of the machine that the server receives the packet from. //will get overriden
     public int client_stage = 0;
@@ -39,6 +40,7 @@ public class ClientState{
         isOnPlatform = buffer.get() == 1;
         isWalking = buffer.get() == 1;
         rolling = buffer.get() == 1;
+        inLobby = buffer.get() == 1;
     
         int colorLen = buffer.getInt();
         byte[] colorBytes = new byte[colorLen];
@@ -62,7 +64,7 @@ public class ClientState{
         byte[] ipStr = sock_address.getAddress().getHostAddress().getBytes(StandardCharsets.UTF_8);
         int totalSize = (
             4 + 4 +                 // x, y
-            1 + 1 + 1 + 1 +         // 4 booleans
+            1 + 1 + 1 + 1 + 1 +       // 5 booleans
             4 + colorBytes.length +// color bytes size + color
             4 + ipStr.length +   // IP string
             4 +                    // port
@@ -77,6 +79,7 @@ public class ClientState{
         buffer.put((byte) (this.isOnPlatform ? 1 : 0));
         buffer.put((byte) (this.isWalking ? 1 : 0));
         buffer.put((byte) (this.rolling ? 1 : 0));
+        buffer.put((byte) (this.inLobby ? 1 : 0));
     
         buffer.putInt(colorBytes.length);
         buffer.put(colorBytes);

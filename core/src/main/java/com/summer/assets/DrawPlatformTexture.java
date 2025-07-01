@@ -5,14 +5,16 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
 public class DrawPlatformTexture {
-    public float platform_tile_ratio = 16f/21f;
-    public int single_platform_width = 16 * 4;
-    public int single_platform_height = 21 * 4;
+    public float tile_width = 16f;
+    public float tile_height = 9f;
+    public float platform_tile_ratio = tile_width/tile_height;
+    public int single_platform_width = (int)(tile_width * 4);
+    public int single_platform_height = (int)(tile_height * 4);
 
     Texture fullTexture = new Texture("Tileset/atlas_walls_high-16x32.png");
     TextureRegion[][] tmp = TextureRegion.split(fullTexture, 16, 32);
-    public TextureRegion region = new TextureRegion(fullTexture, 0, 128 - 21,   16, 21);    
-    public DrawPlatformTexture(){   
+    public TextureRegion region = new TextureRegion(fullTexture, 0, 128 - 21,   (int)tile_width, (int)tile_height);    
+    public DrawPlatformTexture(){
         //region = tmp[3][1];
     }
     public void drawPlatformTiled(SpriteBatch batch, platform p) {

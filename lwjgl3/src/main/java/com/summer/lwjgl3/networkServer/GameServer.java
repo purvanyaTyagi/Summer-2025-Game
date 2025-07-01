@@ -23,14 +23,15 @@ public class GameServer implements Runnable{
     ConcurrentHashMap<Integer, CopyOnWriteArrayList<platform>>  stages = new ConcurrentHashMap<>();
     int maxPacketSize = 512; // safe size for most networks
     int platformSize = 1 + 4 + 4 * 4; // type (1) + id (4) + 4 floats
-
     int maxPlatforms = (maxPacketSize - 1) / platformSize; // leave 1 byte for overall type
+    InetSocketAddress first_client;
+    //public boolean inLobby = true; 
 
     public void run(){
         try {
             socket = new DatagramSocket(9999);
             CopyOnWriteArrayList<platform> stage_0 = new CopyOnWriteArrayList<>();
-            PlatformGenerator.generateStackedPlatforms(1500, -385, 3, 254, stage_0);
+            PlatformGenerator.generateStackedPlatforms(stage_0);
             stages.put(0, stage_0);
             new Thread(this::broadcastLoop).start();
             new Thread(this::Handle_Platforms).start();
@@ -63,9 +64,23 @@ public class GameServer implements Runnable{
 
             // ClientState client_state = (ClientState) ois.readObject();
             ClientState client_state = new ClientState(data);
+            // if(clients.size() > 1 && client_addr == first_client && client_state.inLobby == false && !inLobby){
+            //     inLobby = false;
+            //     for(ClientState client : clients.values()){
+            //         client.inLobby = false;
+            //     }
+            // }
             client_state.sock_address = client_addr;
             client_state.lastSeen = System.currentTimeMillis();
             clients.put(client_addr, client_state);
+            // if(inLobby && clients.size() >= 2){
+            //     inLobby = false;
+            //     for(ClientState client_states : clients.values()){
+            //         if(client_states.inLobby){
+            //             inLobby = true;
+            //         }
+            //     }
+            // }
             //System.out.println("Received Packet from port No: " + clientPort);
         } catch (Exception e) {
             e.printStackTrace();
@@ -95,7 +110,6 @@ public class GameServer implements Runnable{
                     byte[] message = new byte[1 + serializedState.length];
                     message[0] = type;
                     System.arraycopy(serializedState, 0, message, 1, serializedState.length);
-
                     //byte[] message = baos.toByteArray();
 
                     for (InetSocketAddress target : clients.keySet()) {
@@ -107,6 +121,7 @@ public class GameServer implements Runnable{
                             socket.send(packet);
                         }
                 }
+
                 byte[] ack_message = new byte[1];
                 ack_message[0] = 3;
                 DatagramPacket packet = new DatagramPacket(
@@ -131,48 +146,51 @@ public class GameServer implements Runnable{
                 for(Map.Entry<InetSocketAddress, ClientState> entry : clients.entrySet()){
                     InetSocketAddress addr = entry.getKey();
 
-                    CopyOnWriteArrayList<platform> platforms = new CopyOnWriteArrayList<>();
-                    platforms = stages.get(entry.getValue().client_stage);
+                        CopyOnWriteArrayList<platform> platforms = new CopyOnWriteArrayList<>();
+                        platforms = stages.get(entry.getValue().client_stage);
 
-                    if(platforms == null){
-                        CopyOnWriteArrayList<platform> new_stage = new CopyOnWriteArrayList<>();
-                        PlatformGenerator.generateStackedPlatforms(1500, -385, 3, 254, new_stage);
-                        stages.put(entry.getValue().client_stage, new_stage);      
-                        platforms = new_stage;
-                    }
+                        if(platforms == null){
+                            CopyOnWriteArrayList<platform> new_stage = new CopyOnWriteArrayList<>();
+                            PlatformGenerator.generateStackedPlatforms(new_stage);
+                            stages.put(entry.getValue().client_stage, new_stage);      
+                            platforms = new_stage;
+                        }
 
-                    ByteBuffer buffer = ByteBuffer.allocate(1 + platforms.size() * platformSize);
-                    buffer.put((byte) 2);
-                    for(platform p : platforms){
-                        // ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                        // DataOutputStream dos = new DataOutputStream(baos);
-                        // dos.writeByte(2); // type = 2 for "platform" (optional tag)
-                        // dos.writeInt(count);
-                        // dos.writeFloat(p.x);
-                        // dos.writeFloat(p.y);
-                        // dos.writeFloat(p.width);
-                        // dos.writeFloat(p.height);
-            
-                        // byte[] data = baos.toByteArray();
-                        // DatagramPacket packet = new DatagramPacket(data, data.length, addr);
-                        // socket.send(packet); 
-                        // count += 1;
-                        buffer.putInt(count);      // ID
-                        buffer.putFloat(p.x);        // X
-                        buffer.putFloat(p.y);        // Y
-                        buffer.putFloat(p.width);    // Width
-                        buffer.putFloat(p.height);   // Height    
-                        count += 1;                
-                    }
-                    byte[] data = buffer.array();
-                    DatagramPacket packet = new DatagramPacket(data, data.length, addr);
-                    socket.send(packet);
+                        ByteBuffer buffer = ByteBuffer.allocate(1 + platforms.size() * platformSize);
+                        buffer.put((byte) 2);
+                        for(platform p : platforms){
+                            // ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                            // DataOutputStream dos = new DataOutputStream(baos);
+                            // dos.writeByte(2); // type = 2 for "platform" (optional tag)
+                            // dos.writeInt(count);
+                            // dos.writeFloat(p.x);
+                            // dos.writeFloat(p.y);
+                            // dos.writeFloat(p.width);
+                            // dos.writeFloat(p.height);
+                
+                            // byte[] data = baos.toByteArray();
+                            // DatagramPacket packet = new DatagramPacket(data, data.length, addr);
+                            // socket.send(packet); 
+                            // count += 1;
+                            buffer.putInt(count);      // ID
+                            buffer.putFloat(p.x);        // X
+                            buffer.putFloat(p.y);        // Y
+                            buffer.putFloat(p.width);    // Width
+                            buffer.putFloat(p.height);   // Height    
+                            count += 1;                
+                        }
+                        byte[] data = buffer.array();
+                        DatagramPacket packet = new DatagramPacket(data, data.length, addr);
+                        socket.send(packet);
                 }
-            } catch (Exception e) {
+                
+            }
+            catch (Exception e) {
                 // TODO: handle exception
             }
+            } 
         }
-    }
+
 
     public void cleanupLoop(){
         while(running){

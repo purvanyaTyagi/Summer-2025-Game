@@ -10,6 +10,7 @@ import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.Input;
@@ -22,8 +23,8 @@ import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
-
-
+import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.summer.assets.*;
 
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
@@ -48,6 +49,7 @@ public class Main extends ApplicationAdapter {
     HashMap<String, AnimatorWalk> walk_Animator = new HashMap<>();    
     HashMap<String, AnimatorRoll> roll_Animator = new HashMap<>();
     DrawPlatformTexture platform_texture;
+    BitmapFont font;
     public float offset_x = 1536 / 2f;
     public float offset_y = 1024 / 2f;
 
@@ -62,8 +64,10 @@ public class Main extends ApplicationAdapter {
 
     @Override
     public void create() {
+        font = new BitmapFont(); // loads default font
+        font.getData().setScale(4f);
         state = new ClientState(0f, -440f, true, false, false, false, "g", 0);
-        
+
         while (!network_handler.serverAcknowledged && waited < maxWaitMillis) {
             network_handler.sendPosition(state);  // Send UDP position again
             try {
@@ -78,6 +82,8 @@ public class Main extends ApplicationAdapter {
         if (!network_handler.serverAcknowledged) {
             throw new RuntimeException("Did not receive ACK from server after multiple retries.");
         }
+
+
         
 
         try {
@@ -126,11 +132,23 @@ public class Main extends ApplicationAdapter {
     @Override
     public void render() {
         float dt = Gdx.graphics.getDeltaTime();
+
         // Handle input
         // if (Gdx.input.isKeyPressed(Input.Keys.W)) y += speed * dt;
         // if (Gdx.input.isKeyPressed(Input.Keys.S)) y -= speed * dt;
         // if (Gdx.input.isKeyPressed(Input.Keys.A)) x -= speed * dt;
-        // if (Gdx.input.isKeyPressed(Input.Keys.D)) x += speed * dt;
+        // // if (Gdx.input.isKeyPressed(Input.Keys.D)) x += speed * dt;
+        for(String color : allColors){
+            idle_Animator.get(color).update(dt);
+            walk_Animator.get(color).update(dt);
+            roll_Animator.get(color).update(dt);
+        }
+
+        if(network_handler.inLobby){
+            update_screen_lobby(dt);
+            return;
+        }
+
         if (waitingForStageData) {
             if (network_handler.platforms.size() > 0) {
                 waitingForStageData = false;
@@ -139,18 +157,17 @@ public class Main extends ApplicationAdapter {
                 return; // skip physics update
             }
         }
+        phy_handler.update_position(state, dt, network_handler.platforms, state.client_stage);
 
-        state = phy_handler.update_position(dt, network_handler.platforms, state.client_stage);
-
-        for(String color : allColors){
-            idle_Animator.get(color).update(dt);
-            walk_Animator.get(color).update(dt);
-            roll_Animator.get(color).update(dt);
-        }
+        // for(String color : allColors){
+        //     idle_Animator.get(color).update(dt);
+        //     walk_Animator.get(color).update(dt);
+        //     roll_Animator.get(color).update(dt);
+        // }
         if(state.y >= 500){
             state.client_stage += 1;
             //phy_handler.y = -440f;
-            phy_handler.reset(state.x, -440f);
+            phy_handler.reset(state.x, -450f);
             network_handler.sendPosition(state);
             network_handler.platforms.clear();
             waitingForStageData = true;
@@ -278,7 +295,123 @@ public class Main extends ApplicationAdapter {
         }
         batch.end();
         shapeRenderer.end();
+    }
 
+    public void update_screen_lobby(float dt){
+
+
+        
+        ConcurrentHashMap<Integer, platform> platforms = new ConcurrentHashMap<>();
+        platforms.put(1, new platform(-768, -532, 1536, 20, true));
+        platforms.put(2, new platform(-788, -492, 20, 1004, true));
+        platforms.put(3, new platform(768, -492, 20, 1004, true));
+
+        phy_handler.update_position(state, dt, platforms, 0);
+
+        network_handler.sendPosition(state);
+        // Clear screen
+        Gdx.gl.glClearColor(0, 0, 0, 1);
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+        camera.update();
+        mapRenderer.setView(camera);
+        mapRenderer.render();
+        shapeRenderer.setProjectionMatrix(camera.combined);
+        batch.setProjectionMatrix(camera.combined);
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        // batch.setShader(vignetteShader);
+        // vignetteShader.bind();
+        // vignetteShader.setUniformf("resolution", Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        batch.begin();
+        // batch.draw(whitePixelTexture, 0, 0, screenWidth, screenHeight); // whitePixelTexture is a 1x1 white texture stretched to screen
+
+
+        // shapeRenderer.setColor(1, 0, 0, 1);
+        // shapeRenderer.rect(state.x - phy_handler.width / 2f, state.y - phy_handler.height / 2f, phy_handler.width, phy_handler.height);
+        // if(phy_handler.isWalking){
+        //     batch.begin();
+        //     walk_Animator.render(batch, state.x, state.y);  // Your cube position
+        //     batch.end();
+        // }else{
+        //     batch.begin();
+        //     idle_Animator.render(batch, state.x, state.y);  // Your cube position
+        //     batch.end();
+        // }
+        
+
+        if(network_handler.other_clients.size() >= 1){
+            font.draw(batch, "Press S key To start the game!", 1536/2f - 600f, 1024/2f); // text, x, y
+        }else{
+            font.draw(batch, "Atleast 2 people are needed to start the game", 1536/2f - 600f, 1024/2f);
+        }
+
+        if(Gdx.input.isKeyPressed(Input.Keys.S) && network_handler.other_clients.size() >= 1){
+            state.inLobby = false;
+        }
+
+        if(phy_handler.roll && phy_handler.FacingLeft){
+            stateTimeForRoll += Gdx.graphics.getDeltaTime();
+            if(stateTimeForRoll >= 0.35f){
+                stateTimeForRoll = 0f;
+                phy_handler.roll = false;
+            }else{
+                roll_Animator.get(chosenColor).render_left(batch, state.x + offset_x, state.y + offset_y);
+                phy_handler.velocity_x -= phy_handler.x_control_speed;
+            }
+        }else if(phy_handler.roll && phy_handler.FacingRight){
+            stateTimeForRoll += Gdx.graphics.getDeltaTime();
+            if(stateTimeForRoll >= 0.35f){
+                stateTimeForRoll = 0f;
+                phy_handler.roll = false;
+            }else{
+                roll_Animator.get(chosenColor).render_left(batch, state.x + offset_x, state.y + offset_y);
+                phy_handler.velocity_x += phy_handler.x_control_speed;
+            }
+        }
+        else if(phy_handler.isWalking && phy_handler.FacingLeft){
+
+            walk_Animator.get(chosenColor).render_left(batch, state.x + offset_x, state.y + offset_y);
+
+        }else if(phy_handler.isWalking && phy_handler.FacingRight){
+
+            walk_Animator.get(chosenColor).render_right(batch, state.x + offset_x, state.y + offset_y);
+
+        }
+        else if(phy_handler.FacingLeft){
+
+            idle_Animator.get(chosenColor).render_left(batch, state.x + offset_x, state.y + offset_y);
+
+        }else{
+
+            idle_Animator.get(chosenColor).render_right(batch, state.x + offset_x, state.y + offset_y);
+        }
+
+        // if(walk_Animator.WalkAnimation.getKeyFrame(walk_Animator.stateTime, true).isFlipX() != !phy_handler.FacingRight){
+        //     walk_Animator.WalkAnimation.getKeyFrame(walk_Animator.stateTime, true).flip(true, false);
+        // }
+
+
+
+        for (ClientState state : network_handler.other_clients.values()) {
+            if(this.state.client_stage == state.client_stage){            // shapeRenderer.setColor(0, 1, 0, 1);
+            // shapeRenderer.rect(state.x - phy_handler.width / 2f, state.y - phy_handler.height / 2f, phy_handler.width, phy_handler.height);
+            if(state.rolling && state.FacingLeft){
+                roll_Animator.get(state.color).render_left(batch, state.x + offset_x, state.y + offset_y);
+            }else if(state.rolling && state.FacingRight){
+                roll_Animator.get(state.color).render_right(batch, state.x + offset_x, state.y + offset_y);
+            }
+            else if(state.isWalking && state.FacingLeft){
+                walk_Animator.get(state.color).render_left(batch, state.x + offset_x, state.y + offset_y);
+            }else if(state.isWalking && state.FacingRight){
+                walk_Animator.get(state.color).render_right(batch, state.x + offset_x, state.y + offset_y);
+            }else if(state.FacingLeft){
+                idle_Animator.get(state.color).render_left(batch, state.x + offset_x, state.y + offset_y);   
+            }else{
+                idle_Animator.get(state.color).render_right(batch, state.x + offset_x, state.y + offset_y);
+            }
+        }
+        }
+        batch.end();
+        shapeRenderer.end();
     }
 }
 

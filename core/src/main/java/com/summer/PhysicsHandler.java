@@ -25,10 +25,10 @@ public class PhysicsHandler{ //x,y represent the middle point of the generated p
     final public float sprite_half = 20f;
 
     private float impulse_factor = 10f;
-    final float lower_bound_y = -480f;
-    final float upper_bound_y = 4850f;
-    final float lower_bound_x = -730f;
-    final float upper_bound_x = 730f;
+    //final float lower_bound_y = -480f;
+    //final float upper_bound_y = 4850f;
+    //final float lower_bound_x = -730f;
+    //final float upper_bound_x = 730f;
     final float x_control_speed = 60f;
     public boolean isOnPlatform = false;
 
@@ -42,7 +42,7 @@ public class PhysicsHandler{ //x,y represent the middle point of the generated p
     float height = 72f;
 
     public List<platform> platforms = new ArrayList<>();
-    public PlatformGenerator platformGenerator = new PlatformGenerator();
+    //public PlatformGenerator platformGenerator = new PlatformGenerator();
 
     public PhysicsHandler(float x, float y, float grav, float jump_pow, String color){
         this.x = x;
@@ -59,7 +59,7 @@ public class PhysicsHandler{ //x,y represent the middle point of the generated p
         // platforms.sort(Comparator.comparingDouble(p -> p.y));
     }
 
-    public ClientState update_position(float deltaTime, ConcurrentHashMap<Integer, platform> platforms, int client_stage){
+    public void update_position(ClientState state, float deltaTime, ConcurrentHashMap<Integer, platform> platforms, int client_stage){
 
         // if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
         //     velocity_y += jump_pow;
@@ -229,19 +229,24 @@ public class PhysicsHandler{ //x,y represent the middle point of the generated p
     if (isOnPlatform) {
         velocity_x *= 0.9f; // friction
     }
-
-    return new ClientState(x, y, FacingRight, isOnPlatform, isWalking, roll, color, client_stage);
+    state.x = this.x;
+    state.y = this.y;
+    state.isOnPlatform = this.isOnPlatform;
+    state.isWalking = this.isWalking;
+    state.rolling = this.roll;
+    state.color = this.color;
+    state.client_stage = client_stage;
+    state.FacingLeft = this.FacingLeft;
+    state.FacingRight = this.FacingRight;
     }
     
     public void reset(float x, float y) {
-        this.x = x;
+        this.x = -300f;
         this.y = y;
         this.velocity_x = 0f;
         this.velocity_y = 0f;
         this.accel_x = 0f;
         this.accel_y = 0f;
-
-
         this.isWalking = false;
         this.roll = false;
         this.FacingRight = true;
