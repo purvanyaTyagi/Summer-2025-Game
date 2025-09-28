@@ -65,6 +65,7 @@ This project uses **Gradle** and **LibGDX**:
 ---
 
 ## 📂 Project Structure
+
 /core
 └── src/main/java/com/summer/
     ├── ClientState.java           # Serializable game state shared between client & server
@@ -82,7 +83,7 @@ This project uses **Gradle** and **LibGDX**:
     ├── StartupHelper.java         # Utility for desktop startup
     └── networkServer/
         └── GameServer.java        # Main UDP server for multiplayer game
-
+        
 - **`/core`** → platform-independent game code (works across desktop, Android, iOS)  
 - **`/lwjgl3`** → desktop-specific code using LWJGL3 backend Includes both the **game server** and the **desktop launcher**  
 - **`/assets`** → contains all important game assets
