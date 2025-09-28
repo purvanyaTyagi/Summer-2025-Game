@@ -66,24 +66,6 @@ This project uses **Gradle** and **LibGDX**:
 
 ## 📂 Project Structure
 
-/core
-└── src/main/java/com/summer/
-    ├── ClientState.java           # Serializable game state shared between client & server
-    ├── DesktopNetworkHandler.java # Handles all client-side networking (UDP)
-    ├── Main.java                  # Entry point for the LibGDX game
-    ├── PhysicsHandler.java        # Defines 2D game physics (gravity, collisions, etc.)
-    ├── NetworkHandler.java        # Interface for networking layer
-    └── assets/
-        ├── Animator.java          # Handles sprite animations (walk, jump, roll, etc.)
-        └── PlatformGenerator.java # Generates procedural platform layouts
-
-/lwjgl3
-└── src/main/java/com/summer/lwjgl3/
-    ├── Lwjgl3Launcher.java        # Desktop launcher for the LibGDX client
-    ├── StartupHelper.java         # Utility for desktop startup
-    └── networkServer/
-        └── GameServer.java        # Main UDP server for multiplayer game
-        
 - **`/core`** → platform-independent game code (works across desktop, Android, iOS)  
 - **`/lwjgl3`** → desktop-specific code using LWJGL3 backend Includes both the **game server** and the **desktop launcher**  
 - **`/assets`** → contains all important game assets
